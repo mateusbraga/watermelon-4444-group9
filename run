@@ -1,0 +1,7 @@
+#!/bin/bash
+
+javac `find . -name \*.java`
+cd src/
+java watermelon.sim.watermelon map0 50 50 1 dumb
+cd ..
+

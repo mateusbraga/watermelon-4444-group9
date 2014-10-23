@@ -3,3 +3,7 @@ bin/
 .classpath
 .project
 csq_coords/
+*.swp
+*.pyc
+*.swo
+
