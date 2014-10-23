@@ -44,7 +44,7 @@ public class watermelon {
 
 	static double dimension = 100.0;
 	static double distoseed = 1.00;
-	static double distowall = 2.00;
+	static double distowall = 0.99;
 	static double distotree = 2.00;
 	static double s = 0.00;
 	static double total = 0.00;
