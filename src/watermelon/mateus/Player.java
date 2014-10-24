@@ -7,9 +7,9 @@ import watermelon.sim.Pair;
 import watermelon.sim.seed;
 
 public class Player extends watermelon.sim.Player {
-	static double distowall = 1.021;
-	static double distotree = 1.021;
-	static double distoseed = 1.021;
+	static double distowall = 1.0;
+	static double distotree = 1.0;
+	static double distoseed = 2.0;
 	
 	public void init() {}
 
@@ -141,32 +141,36 @@ public class Player extends watermelon.sim.Player {
 					seedList.add(new seed(seedX, seedY, false));
 					System.out.printf("%f %f\n", seedX, seedY);
 				}
-				break loop; 
+//				break loop; 
 			}
 		}
 		
-		ArrayList<seed> seedlist = new ArrayList<seed>();
-		for (double i = distowall; i < width - distowall; i = i + distoseed) {
-			for (double j = distowall; j < length - distowall; j = j + distoseed) {
-				Random random = new Random();
-				seed tmp;
-				if (random.nextInt(2) == 0)
-					tmp = new seed(i, j, false);
-				else
-					tmp = new seed(i, j, true);
-				boolean add = true;
-				for (int f = 0; f < treelist.size(); f++) {
-					if (distance(tmp, treelist.get(f)) < distotree) {
-						add = false;
-						break;
-					}
-				}
-				if (add) {
-					seedlist.add(tmp);
-				}
-			}
-		}
-		System.out.printf("seedlist size is %d", seedlist.size());
+//		ArrayList<seed> seedlist = new ArrayList<seed>();
+//		for (double i = distowall; i < width - distowall; i = i + distoseed) {
+//			for (double j = distowall; j < length - distowall; j = j + distoseed) {
+//				Random random = new Random();
+//				seed tmp;
+//				if (random.nextInt(2) == 0)
+//					tmp = new seed(i, j, false);
+//				else
+//					tmp = new seed(i, j, true);
+//				boolean add = true;
+//				for (int f = 0; f < treelist.size(); f++) {
+//					if (distance(tmp, treelist.get(f)) < distotree) {
+//						add = false;
+//						break;
+//					}
+//				}
+//				if (add) {
+//					seedlist.add(tmp);
+//				}
+//			}
+//		}
+//		System.out.printf("seedlist size is %d", seedlist.size());
+		
+		System.out.printf("Total seeds: %d\n", seedList.size());
+		System.out.printf("Density: %f\n", (seedList.size()*Math.PI)/(length*width));
+		
 		return seedList;
 	}
 
