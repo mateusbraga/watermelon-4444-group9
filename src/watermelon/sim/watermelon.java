@@ -34,17 +34,16 @@ public class watermelon {
 	// enable gui
 	static boolean gui = true;
 
-	static double L; // land cells number to afford outpost
+	static double L;
 	static double W;
-	static private Point[] grid;
 	static ArrayList<Pair> treelist = new ArrayList<Pair>();
 	static ArrayList<seed> seedlist = new ArrayList<seed>();
 
 	static Player player;
 
 	static double dimension = 100.0;
-	static double distoseed = 1.00;
-	static double distowall = 0.99;
+	static double distoseed = 2.00;
+	static double distowall = 1.00;
 	static double distotree = 2.00;
 	static double s = 0.00;
 	static double total = 0.00;
@@ -258,14 +257,17 @@ public class watermelon {
 			// draw 2D rectangle
 			g2.draw(new Rectangle2D.Double(ox, oy, dimension * s / size * W,
 					dimension * s / size * L));
+			
 			double x_in = (dimension * s) / size;
 			double y_in = (dimension * s) / size;
+			
 			for (int i=0; i<treelist.size(); i++) {
 				g2.setPaint(Color.green);
 				//g2.fill(new Rectangle2D.Double(ox+treelist.get(i).x,
 					//	oy+treelist.get(i).y, x_in, y_in));
 				drawTree(g2, treelist.get(i));
 			}
+			
 			for (int i = 0; i < seedlist.size(); i++) {
 				// drawPoint(g2, pointers[i]);
 				drawPoint(g2, seedlist.get(i));
@@ -278,7 +280,7 @@ public class watermelon {
 			double size = Math.max(W, L);
 			double x_in = (dimension * s) / size;
 			double y_in = (dimension * s) / size;
-			Ellipse2D e = new Ellipse2D.Double(pr.x * x_in-x_in/2, pr.y * y_in-y_in/2, x_in , y_in );
+			Ellipse2D e = new Ellipse2D.Double(ox + pr.x*x_in - x_in, oy + pr.y*y_in - y_in, 2*x_in , 2*y_in);
 			g2.setStroke(stroke);
 			g2.draw(e);
 			g2.fill(e);
@@ -290,11 +292,12 @@ public class watermelon {
 				g2.setPaint(Color.BLACK);
 			else
 				g2.setPaint(Color.MAGENTA);
+			
 			double size = Math.max(W, L);
 			double x_in = (dimension * s) / size;
 			double y_in = (dimension * s) / size;
-			Ellipse2D e = new Ellipse2D.Double(sd.x * x_in-x_in /2, sd.y * y_in-y_in / 2
-					, x_in, y_in);
+			
+			Ellipse2D e = new Ellipse2D.Double(ox + sd.x*x_in - x_in, oy + sd.y*y_in - y_in, 2*x_in, 2*y_in);
 			g2.setStroke(stroke);
 			g2.draw(e);
 			g2.fill(e);
@@ -322,6 +325,8 @@ public class watermelon {
 	}
 
 	double calculatescore() {
+		total = 0;
+		
 		for (int i = 0; i < seedlist.size(); i++) {
 			double score;
 			double chance = 0.0;
@@ -390,7 +395,7 @@ public class watermelon {
 			for (int j = 0; j < nseeds; j++) {
 				if (distance(seedlistin.get(j), treelist.get(i)) < distotree) {
 					System.out
-							.printf("The %d seed (%f, %f) is too close to the tree (%d, %d), %f\n",
+							.printf("The %d seed (%f, %f) is too close to the tree (%f, %f), %f\n",
 									j,
 									seedlistin.get(j).x,
 									seedlistin.get(j).y,
