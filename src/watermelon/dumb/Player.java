@@ -7,9 +7,9 @@ import watermelon.sim.Point;
 import watermelon.sim.seed;
 
 public class Player extends watermelon.sim.Player {
-	static double distowall = 2.1;
-	static double distotree = 2.2;
-	static double distoseed = 1.01;
+	static double distowall = 1.0;
+	static double distotree = 2.0;
+	static double distoseed = 2.0;
 
 	public void init() {
 
@@ -37,7 +37,7 @@ public class Player extends watermelon.sim.Player {
 				if (random.nextInt(2) == 0)
 					tmp = new seed(i, j, false);
 				else
-					tmp = new seed(i, j, true);
+					tmp = new seed(i, j, false);
 				boolean add = true;
 				for (int f = 0; f < treelist.size(); f++) {
 					if (distance(tmp, treelist.get(f)) < distotree) {

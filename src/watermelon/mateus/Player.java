@@ -8,7 +8,7 @@ import watermelon.sim.seed;
 
 public class Player extends watermelon.sim.Player {
 	static double distowall = 1.0;
-	static double distotree = 1.0;
+	static double distotree = 2.0;
 	static double distoseed = 2.0;
 	
 	public void init() {}
@@ -31,11 +31,11 @@ public class Player extends watermelon.sim.Player {
 		return a;
 	}
 	
-	static CirclesRadius getMatchedCirclesRadius(double radius) {
+	static CirclesRadius getMatchedCirclesRadiusForSquare(double radius) {
 		String filename = "radius.txt";
 		File file = new File(filename);
 		BufferedReader reader = null;
-		
+		double lastRadius = 0;
 		try {
 		    reader = new BufferedReader(new FileReader(file));
 		    String text = null;
@@ -47,10 +47,14 @@ public class Player extends watermelon.sim.Player {
 		    	String[] parts = text.split(" ");
 		    	double radiusTemp = Double.parseDouble(parts[1]);
 		    	
-		    	if (radiusTemp <= radius) {
+		    	if (radiusTemp < radius) {
+		    		int numberOfCircles = Integer.parseInt(parts[0]);
+			    	return new CirclesRadius(lastRadius, numberOfCircles-1);
+		    	} else if (radiusTemp == radius) {
 		    		int numberOfCircles = Integer.parseInt(parts[0]);
 			    	return new CirclesRadius(radiusTemp, numberOfCircles);
 		    	}
+		    	lastRadius = radiusTemp;
 		    }
 		} catch (FileNotFoundException e) {
 		    e.printStackTrace();
@@ -67,7 +71,15 @@ public class Player extends watermelon.sim.Player {
 		throw new IllegalArgumentException("Couldn't find number of circles for radius " + radius);
 	}
 	
-	static ArrayList<Pair> getCirclesLocations(int numberOfCircles) {
+	static ArrayList<Pair> getCirclesLocationsForSquare(double squareSize) {
+		double circleRadius = 1/squareSize;
+		CirclesRadius matchedCirclesRadius = getMatchedCirclesRadiusForSquare(circleRadius);
+		int numberOfCircles = matchedCirclesRadius.circles;
+		
+		System.out.printf("ideal radius is %f\n", 1/squareSize);
+		System.out.printf("actual radius is %f\n", matchedCirclesRadius.radius);
+		System.out.printf("numberOfCircles is %d\n", matchedCirclesRadius.circles);
+		
 		String filename = "csq_coords/csq" + numberOfCircles + ".txt";
 		File file = new File(filename);
 		BufferedReader reader = null;
@@ -82,12 +94,13 @@ public class Player extends watermelon.sim.Player {
 //		    	System.out.printf("%s\n", text);
 		    	String[] parts = text.trim().split("\\s+");
 //		    	System.out.printf("%s\n", parts[0]);
-//		    	System.out.printf("%s %s\n", parts[1], parts[2]);
+		    	System.out.printf("%s %s\n", parts[1], parts[2]);
 //		    	System.out.printf("%s\n\n\n", parts[2]);
-		    	double x = Double.parseDouble(parts[1]) + 0.5;
-		    	double y = Double.parseDouble(parts[2]) + 0.5;
+		    	double x = (Double.parseDouble(parts[1]) + 0.5)/matchedCirclesRadius.radius;
+		    	double y = (Double.parseDouble(parts[2]) + 0.5)/matchedCirclesRadius.radius;
 		    	locations.add(new Pair(x, y));
-//		    	System.out.printf("%f %f\n", x, y);
+		    	System.out.printf("%f %f\n", x, y);
+		    	System.out.printf("\n");
 		    }
 		} catch (FileNotFoundException e) {
 		    e.printStackTrace();
@@ -104,40 +117,65 @@ public class Player extends watermelon.sim.Player {
 		return locations;
 	}
 	
-	static boolean squareHasTree(int x, int y, ArrayList<Pair> treelist, double squareSize) {
+	static boolean squareHasTree(double x, double y, ArrayList<Pair> treelist, double squareSize) {
 		for(Pair tree : treelist) {
-			if(tree.x > squareSize*x && tree.x < squareSize*x && tree.y > squareSize*y && tree.y < squareSize*y) {
+			if(pointInsideSquare(tree.x, tree.y, x, y, squareSize) ||
+					pointInsideSquare(tree.x-1, tree.y, x, y, squareSize) ||
+					pointInsideSquare(tree.x+1, tree.y, x, y, squareSize) ||
+					pointInsideSquare(tree.x, tree.y-1, x, y, squareSize) ||
+					pointInsideSquare(tree.x, tree.y+1, x, y, squareSize)) {
 				return true;
 			}
 		}
 		return false;
 	}
+	
+	public static boolean pointInsideSquare(double xPoint, double yPoint, double xSquare, double ySquare, double squareSize) {
+		return (xPoint > xSquare && xPoint < xSquare + squareSize) && (yPoint > ySquare && yPoint < ySquare + squareSize);
+	}
 
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
-		double a = width;
-		double b = length;
-		double squareSize = gcd(a,b);
-		double circleRadius = 1/squareSize;
-		CirclesRadius matchedCirclesRadius = getMatchedCirclesRadius(circleRadius);
-		ArrayList<Pair> circlesLocation = getCirclesLocations(matchedCirclesRadius.circles);
+		double squareSize = gcd(width,length);
+		if(squareSize == 1) {
+			width--;
+			length--;
+			squareSize = gcd(width, length);
+		}
 		
-		System.out.printf("Gcd of %f and %f is appx %f\n", a, b, squareSize);
-		System.out.printf("%fx%f field\n", a/squareSize, b/squareSize);
+		System.out.printf("Gcd of %f and %f is appx %f\n", width, length, squareSize);
+		System.out.printf("%fx%f field\n", width/squareSize, length/squareSize);
 		System.out.printf("square size is %f\n", squareSize);
-		System.out.printf("radius is %f\n", 1/squareSize);
-		System.out.printf("numberOfCircles is %d\n", matchedCirclesRadius.circles);
+		
+		ArrayList<Pair> circlesLocation = getCirclesLocationsForSquare(squareSize);
+		
+
 		
 		
 		ArrayList<seed> seedList = new ArrayList<seed>();
 		loop:
 		for(int x = 0; x < width/squareSize; x++) {
 			for (int y = 0; y < length/squareSize; y++) {
-				if (squareHasTree(x, y, treelist, squareSize)) {
+				if (squareHasTree(x*squareSize, y*squareSize, treelist, squareSize)) {
+					for (double i = x*squareSize + distowall; i < (x+1)*squareSize - distowall; i = i + distoseed) {
+						for (double j = y*squareSize + distowall; j < (y+1)*squareSize - distowall; j = j + distoseed) {
+							seed tmpSeed = new seed(i, j, false);
+							boolean add = true;
+							for (Pair tree : treelist) {
+								if (distance(tmpSeed, tree) < distotree) {
+									add = false;
+									break;
+								}
+							}
+							if (add) {
+								seedList.add(tmpSeed);
+							}
+						}
+					}
 					continue;
 				}
 				for(Pair location : circlesLocation) {
-					double seedX = squareSize*x + location.x/matchedCirclesRadius.radius;
-					double seedY = squareSize*y + location.y/matchedCirclesRadius.radius;
+					double seedX = squareSize*x + location.x;
+					double seedY = squareSize*y + location.y;
 					seedList.add(new seed(seedX, seedY, false));
 					System.out.printf("%f %f\n", seedX, seedY);
 				}
@@ -145,40 +183,60 @@ public class Player extends watermelon.sim.Player {
 			}
 		}
 		
-//		ArrayList<seed> seedlist = new ArrayList<seed>();
-//		for (double i = distowall; i < width - distowall; i = i + distoseed) {
-//			for (double j = distowall; j < length - distowall; j = j + distoseed) {
-//				Random random = new Random();
-//				seed tmp;
-//				if (random.nextInt(2) == 0)
-//					tmp = new seed(i, j, false);
-//				else
-//					tmp = new seed(i, j, true);
-//				boolean add = true;
-//				for (int f = 0; f < treelist.size(); f++) {
-//					if (distance(tmp, treelist.get(f)) < distotree) {
-//						add = false;
-//						break;
-//					}
-//				}
-//				if (add) {
-//					seedlist.add(tmp);
-//				}
-//			}
-//		}
-//		System.out.printf("seedlist size is %d", seedlist.size());
-		
 		System.out.printf("Total seeds: %d\n", seedList.size());
 		System.out.printf("Density: %f\n", (seedList.size()*Math.PI)/(length*width));
 		
 		return seedList;
 	}
-
 	
+	public static ArrayList<Square> getSquaresForField(ArrayList<Pair> trees, double width, double length) {
+		ArrayList<Pair> corners = new ArrayList<Pair>();
+		corners.add(new Pair(0,0));
+		corners.add(new Pair(0,width));
+		corners.add(new Pair(length,0));
+		corners.add(new Pair(length,width));
+		
+		Square biggestSquare = new Square(new Pair(0,0), 0);
+		
+//		ArrayList<Pair> nextCorners = new ArrayList<Pair>();
+//		for(Pair p : corners) {
+//			if(p.x < width/2 && p.y < height/2) {
+//				double minSize = Double.MAX_VALUE;
+//				for(Pair tree : trees) {
+//					if(biggestSquare.size < Math.min(tree.x, tree.y)) {
+//						biggestSquare.upperLeftCorner =;
+//					}
+//				}
+//				
+//			}
+//		}
+		return null;
+	}
+//	
+//	public static getBiggestSquareSize(Pair corner, ArrayList<Pair> corners, ArrayList<Pair> trees) {
+//		
+//	}
+
 	public static class CirclesRadius {
 		public double radius;
 		public int circles;
 		
 		public CirclesRadius(double radius, int circles) { this.radius = radius; this.circles = circles; }
+	}
+	
+	public static class Square {
+		public Pair upperLeftCorner;
+		public double size;
+		
+		public Square(Pair upperLeftCorner, double size) { this.upperLeftCorner = upperLeftCorner; this.size = size; }
+		
+		public boolean hasPair(Pair p) {
+			if(p.x >= upperLeftCorner.x && p.x <= upperLeftCorner.x + size) {
+				if(p.y >= upperLeftCorner.y && p.y <= upperLeftCorner.y + size) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 }

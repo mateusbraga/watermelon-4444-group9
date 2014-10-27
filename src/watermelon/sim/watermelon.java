@@ -42,9 +42,9 @@ public class watermelon {
 	static Player player;
 
 	static double dimension = 100.0;
-	static double distoseed = 2.00;
-	static double distowall = 1.00;
-	static double distotree = 2.00;
+	static double distoseed = 1.98;
+	static double distowall = 0.98;
+	static double distotree = 1.98;
 	static double s = 0.00;
 	static double total = 0.00;
 
@@ -364,7 +364,7 @@ public class watermelon {
 
 		for (int i = 0; i < nseeds; i++) {
 			for (int j = i + 1; j < nseeds; j++) {
-				if (distanceseed(seedlistin.get(i), seedlistin.get(j)) < distoseed) {
+				if (distanceseed(seedlistin.get(i), seedlistin.get(j)) <= distoseed) {
 					System.out.printf(
 							"The distance between %d seed  %d seed is %f\n", i,
 							j,
@@ -381,10 +381,10 @@ public class watermelon {
 						seedlistin.get(i).x, seedlistin.get(i).y);
 				return false;
 			}
-			if (seedlistin.get(i).x < distowall
-					|| W - seedlistin.get(i).x < distowall
-					|| seedlistin.get(i).y < distowall
-					|| L - seedlistin.get(i).y < distowall) {
+			if (seedlistin.get(i).x <= distowall
+					|| W - seedlistin.get(i).x <= distowall
+					|| seedlistin.get(i).y <= distowall
+					|| L - seedlistin.get(i).y <= distowall) {
 				System.out.printf(
 						"The %d seed (%f, %f) is too close to the wall\n", i,
 						seedlistin.get(i).x, seedlistin.get(i).y);
@@ -393,7 +393,7 @@ public class watermelon {
 		}
 		for (int i = 0; i < treelist.size(); i++) {
 			for (int j = 0; j < nseeds; j++) {
-				if (distance(seedlistin.get(j), treelist.get(i)) < distotree) {
+				if (distance(seedlistin.get(j), treelist.get(i)) <= distotree) {
 					System.out
 							.printf("The %d seed (%f, %f) is too close to the tree (%f, %f), %f\n",
 									j,
