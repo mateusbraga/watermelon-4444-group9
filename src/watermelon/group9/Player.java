@@ -17,6 +17,10 @@ public class Player extends watermelon.sim.Player {
 		return Math.sqrt((tmp.x - pair.x) * (tmp.x - pair.x) + (tmp.y - pair.y) * (tmp.y - pair.y));
 	}
 	
+	static double distance(seed tmp, seed pair) {
+		return Math.sqrt((tmp.x - pair.x) * (tmp.x - pair.x) + (tmp.y - pair.y) * (tmp.y - pair.y));
+	}
+	
 	static double gcd(double a, double b) {
 		int precision = 10000;
 		return gcd((int) (a*precision), (int) (b*precision))/(1.0*precision);
@@ -186,7 +190,82 @@ public class Player extends watermelon.sim.Player {
 		System.out.printf("Total seeds: %d\n", seedList.size());
 		System.out.printf("Density: %f\n", (seedList.size()*Math.PI)/(length*width));
 		
-		return seedList;
+		// Yun add for labeling
+				int n = seedList.size();
+				double w[][] = new double[n][n];
+				// calculate the matrix
+				for(int i = 0; i < n; i++)
+				{
+					seed seed1 = seedList.get(i);
+					double sum = 0; // calculte the numerator
+					
+					for(int j = 0; j < n; j++)
+					{
+						if(i == j)
+							w[i][j] = 0;
+						else
+						{
+							seed seed2 =  seedList.get(j);
+							w[i][j]    = 1/(distance(seed1, seed2) * distance(seed1, seed2));
+							sum += w[i][j];
+						}
+					}
+					
+					System.out.println("i: " + i + ", sum is: " + sum);
+					for(int j = 0; j < n; j++)
+					{
+						w[i][j] = w[i][j]/sum;
+						//System.out.println("i: " + i + ", j: " + j + ", w[i][j]: " + w[i][j]);
+					}
+				}
+				
+				Boolean subset[] = new Boolean[n];
+				Boolean best_subset[] = new Boolean[n];
+				for(int i = 0; i < n; i++)
+					subset[i] = false;
+				int time = 1000000;
+				double max_w = 0; // the max sum of edge valules
+				double sum_w = 0; // the current sum of edge values
+				
+				while(time-- != 0)
+				{
+					int x = (int)(Math.random()*n); // Does the random function in java cause many duplicates?
+					subset[x] = !subset[x]; // change the label of x
+					
+					for(int i = 0; i < n; i++)
+					{
+						if(subset[i] != subset[x]) // i and x are in different classifications now
+						{
+							sum_w += w[i][x];
+							sum_w += w[x][i];
+						}
+						
+						if(i != x &&  subset[i] == subset[x])
+						{
+							sum_w -= w[i][x];
+							sum_w -= w[x][i];
+						}
+					}
+					
+					if(max_w < sum_w)
+					{
+						max_w = sum_w;
+					    for(int i = 0; i < n; i++)
+					    {
+					    	best_subset[i] = subset[i];
+					    }	
+					}
+				}
+				
+				for(int i = 0; i < n; i++)
+				{
+					if(best_subset[i] == false)
+						seedList.get(i).tetraploid = false;
+					else
+						seedList.get(i).tetraploid = true;
+						
+				}
+				return seedList;
 	}
 	
 	public static ArrayList<Square> getSquaresForField(ArrayList<Pair> trees, double width, double length) {

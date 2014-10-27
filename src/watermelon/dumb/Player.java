@@ -37,7 +37,7 @@ public class Player extends watermelon.sim.Player {
 				if (random.nextInt(2) == 0)
 					tmp = new seed(i, j, false);
 				else
-					tmp = new seed(i, j, false);
+					tmp = new seed(i, j, true);
 				boolean add = true;
 				for (int f = 0; f < treelist.size(); f++) {
 					if (distance(tmp, treelist.get(f)) < distotree) {
