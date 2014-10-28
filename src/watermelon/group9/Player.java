@@ -16,13 +16,13 @@ public class Player extends watermelon.sim.Player {
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
 		
 		//pack problem
-		ArrayList<seed> seedList = packSeedsGcdSquares(treelist, width, length);
-		
-		System.out.printf("Total seeds: %d\n", seedList.size());
-		System.out.printf("Density: %f\n", getDensity(seedList, width, length));
+		ArrayList<seed> seedList = packHexagonal(treelist, width, length);
 		
 		//label problem
 		labelSeedsBestRandom(seedList, treelist, width, length, s);
+		
+		System.out.printf("Total seeds: %d\n", seedList.size());
+		System.out.printf("Density: %f\n", getDensity(seedList, width, length));
 		
 		return seedList;
 	}
@@ -309,25 +309,29 @@ public class Player extends watermelon.sim.Player {
 //		
 //	}
 	
-//	public ArrayList<seed> packHexagonal(ArrayList<Pair> treelist, double width, double length) {
-//		for (double x = distowall; x < width - distowall; x+= distoseed) {
-//			for (double j = y*squareSize + distowall; j < (y+1)*squareSize - distowall; j = j + distoseed) {
-//				seed tmpSeed = new seed(i, j, false);
-//				boolean add = true;
-//				for (Pair tree : treelist) {
-//					if (distance(tmpSeed, tree) < distotree) {
-//						add = false;
-//						break;
-//					}
-//				}
-//				if (add) {
-//					seedList.add(tmpSeed);
-//				}
-//			}
-//		}
-//		
-//		return null;
-//	}
+	public ArrayList<seed> packHexagonal(ArrayList<Pair> treelist, double width, double length) {
+		ArrayList<seed> seedList = new ArrayList<seed>();
+		
+		double x = distowall;
+		double y = length-distowall;
+		boolean nextIsRowFromEdge = false;
+		while(y > distowall) {
+			while(x < width - distowall) {
+				seed tmpSeed = new seed(x, y, false);
+				seedList.add(tmpSeed);
+				x += distoseed;
+			}
+			if (nextIsRowFromEdge) {
+				x = distowall;
+			} else {
+				x = distoseed;
+			}
+			y -= Math.sqrt(3);
+			nextIsRowFromEdge = !nextIsRowFromEdge;
+		}
+	
+		return seedList;
+	}
 
 	public static class CirclesRadius {
 		public double radius;
