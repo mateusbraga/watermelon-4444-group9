@@ -12,6 +12,20 @@ public class Player extends watermelon.sim.Player {
 	static double distoseed = 2.0;
 	
 	public void init() {}
+	
+	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
+		
+		//pack problem
+		ArrayList<seed> seedList = packSeedsGcdSquares(treelist, width, length);
+		
+		System.out.printf("Total seeds: %d\n", seedList.size());
+		System.out.printf("Density: %f\n", getDensity(seedList, width, length));
+		
+		//label problem
+		labelSeedsBestRandom(seedList, treelist, width, length, s);
+		
+		return seedList;
+	}
 
 	static double distance(seed tmp, Pair pair) {
 		return Math.sqrt((tmp.x - pair.x) * (tmp.x - pair.x) + (tmp.y - pair.y) * (tmp.y - pair.y));
@@ -72,7 +86,7 @@ public class Player extends watermelon.sim.Player {
 		    } catch (IOException e) {
 		    }
 		}
-		throw new IllegalArgumentException("Couldn't find number of circles for radius " + radius);
+		return null;
 	}
 	
 	static ArrayList<Pair> getCirclesLocationsForSquare(double squareSize) {
@@ -98,13 +112,13 @@ public class Player extends watermelon.sim.Player {
 //		    	System.out.printf("%s\n", text);
 		    	String[] parts = text.trim().split("\\s+");
 //		    	System.out.printf("%s\n", parts[0]);
-		    	System.out.printf("%s %s\n", parts[1], parts[2]);
+//		    	System.out.printf("%s %s\n", parts[1], parts[2]);
 //		    	System.out.printf("%s\n\n\n", parts[2]);
 		    	double x = (Double.parseDouble(parts[1]) + 0.5)/matchedCirclesRadius.radius;
 		    	double y = (Double.parseDouble(parts[2]) + 0.5)/matchedCirclesRadius.radius;
 		    	locations.add(new Pair(x, y));
-		    	System.out.printf("%f %f\n", x, y);
-		    	System.out.printf("\n");
+//		    	System.out.printf("%f %f\n", x, y);
+//		    	System.out.printf("\n");
 		    }
 		} catch (FileNotFoundException e) {
 		    e.printStackTrace();
@@ -123,22 +137,26 @@ public class Player extends watermelon.sim.Player {
 	
 	static boolean squareHasTree(double x, double y, ArrayList<Pair> treelist, double squareSize) {
 		for(Pair tree : treelist) {
-			if(pointInsideSquare(tree.x, tree.y, x, y, squareSize) ||
-					pointInsideSquare(tree.x-1, tree.y, x, y, squareSize) ||
-					pointInsideSquare(tree.x+1, tree.y, x, y, squareSize) ||
-					pointInsideSquare(tree.x, tree.y-1, x, y, squareSize) ||
-					pointInsideSquare(tree.x, tree.y+1, x, y, squareSize)) {
+			if(pointIsInsideSquare(tree.x, tree.y, x, y, squareSize) ||
+					pointIsInsideSquare(tree.x-1, tree.y, x, y, squareSize) ||
+					pointIsInsideSquare(tree.x+1, tree.y, x, y, squareSize) ||
+					pointIsInsideSquare(tree.x, tree.y-1, x, y, squareSize) ||
+					pointIsInsideSquare(tree.x, tree.y+1, x, y, squareSize)) {
 				return true;
 			}
 		}
 		return false;
 	}
 	
-	public static boolean pointInsideSquare(double xPoint, double yPoint, double xSquare, double ySquare, double squareSize) {
+	public static boolean pointIsInsideSquare(double xPoint, double yPoint, double xSquare, double ySquare, double squareSize) {
 		return (xPoint > xSquare && xPoint < xSquare + squareSize) && (yPoint > ySquare && yPoint < ySquare + squareSize);
 	}
+	
+	public static double getDensity(ArrayList<seed> seedList, double width, double length) {
+		return (seedList.size()*Math.PI)/(length*width);
+	}
 
-	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
+	public ArrayList<seed> packSeedsGcdSquares(ArrayList<Pair> treelist, double width, double length) {
 		double squareSize = gcd(width,length);
 		if(squareSize == 1) {
 			width--;
@@ -152,11 +170,8 @@ public class Player extends watermelon.sim.Player {
 		
 		ArrayList<Pair> circlesLocation = getCirclesLocationsForSquare(squareSize);
 		
-
-		
-		
 		ArrayList<seed> seedList = new ArrayList<seed>();
-		loop:
+//		loop:
 		for(int x = 0; x < width/squareSize; x++) {
 			for (int y = 0; y < length/squareSize; y++) {
 				if (squareHasTree(x*squareSize, y*squareSize, treelist, squareSize)) {
@@ -181,119 +196,137 @@ public class Player extends watermelon.sim.Player {
 					double seedX = squareSize*x + location.x;
 					double seedY = squareSize*y + location.y;
 					seedList.add(new seed(seedX, seedY, false));
-					System.out.printf("%f %f\n", seedX, seedY);
+//					System.out.printf("%f %f\n", seedX, seedY);
 				}
 //				break loop; 
 			}
 		}
-		
-		System.out.printf("Total seeds: %d\n", seedList.size());
-		System.out.printf("Density: %f\n", (seedList.size()*Math.PI)/(length*width));
-		
-		// Yun add for labeling
-				int n = seedList.size();
-				double w[][] = new double[n][n];
-				// calculate the matrix
-				for(int i = 0; i < n; i++)
-				{
-					seed seed1 = seedList.get(i);
-					double sum = 0; // calculte the numerator
-					
-					for(int j = 0; j < n; j++)
-					{
-						if(i == j)
-							w[i][j] = 0;
-						else
-						{
-							seed seed2 =  seedList.get(j);
-							w[i][j]    = 1/(distance(seed1, seed2) * distance(seed1, seed2));
-							sum += w[i][j];
-						}
-					}
-					
-					System.out.println("i: " + i + ", sum is: " + sum);
-					for(int j = 0; j < n; j++)
-					{
-						w[i][j] = w[i][j]/sum;
-						//System.out.println("i: " + i + ", j: " + j + ", w[i][j]: " + w[i][j]);
-					}
-				}
-				
-				Boolean subset[] = new Boolean[n];
-				Boolean best_subset[] = new Boolean[n];
-				for(int i = 0; i < n; i++)
-					subset[i] = false;
-				int time = 1000000;
-				double max_w = 0; // the max sum of edge valules
-				double sum_w = 0; // the current sum of edge values
-				
-				while(time-- != 0)
-				{
-					int x = (int)(Math.random()*n); // Does the random function in java cause many duplicates?
-					subset[x] = !subset[x]; // change the label of x
-					
-					for(int i = 0; i < n; i++)
-					{
-						if(subset[i] != subset[x]) // i and x are in different classifications now
-						{
-							sum_w += w[i][x];
-							sum_w += w[x][i];
-						}
-						
-						if(i != x &&  subset[i] == subset[x])
-						{
-							sum_w -= w[i][x];
-							sum_w -= w[x][i];
-						}
-					}
-					
-					if(max_w < sum_w)
-					{
-						max_w = sum_w;
-					    for(int i = 0; i < n; i++)
-					    {
-					    	best_subset[i] = subset[i];
-					    }	
-					}
-				}
-				
-				for(int i = 0; i < n; i++)
-				{
-					if(best_subset[i] == false)
-						seedList.get(i).tetraploid = false;
-					else
-						seedList.get(i).tetraploid = true;
-						
-				}
-				return seedList;
+		return seedList;
 	}
 	
-	public static ArrayList<Square> getSquaresForField(ArrayList<Pair> trees, double width, double length) {
-		ArrayList<Pair> corners = new ArrayList<Pair>();
-		corners.add(new Pair(0,0));
-		corners.add(new Pair(0,width));
-		corners.add(new Pair(length,0));
-		corners.add(new Pair(length,width));
+	public void labelSeedsBestRandom(ArrayList<seed> seedList, ArrayList<Pair> treelist, double width, double length, double s) {
+		int n = seedList.size();
+		double w[][] = new double[n][n];
+		// calculate the matrix
+		for(int i = 0; i < n; i++)
+		{
+			seed seed1 = seedList.get(i);
+			double sum = 0; // calculte the numerator
+			
+			for(int j = 0; j < n; j++)
+			{
+				if(i == j)
+					w[i][j] = 0;
+				else
+				{
+					seed seed2 =  seedList.get(j);
+					w[i][j]    = 1/(distance(seed1, seed2) * distance(seed1, seed2));
+					sum += w[i][j];
+				}
+			}
+			
+			System.out.println("i: " + i + ", sum is: " + sum);
+			for(int j = 0; j < n; j++)
+			{
+				w[i][j] = w[i][j]/sum;
+				//System.out.println("i: " + i + ", j: " + j + ", w[i][j]: " + w[i][j]);
+			}
+		}
 		
-		Square biggestSquare = new Square(new Pair(0,0), 0);
+		Boolean subset[] = new Boolean[n];
+		Boolean best_subset[] = new Boolean[n];
+		for(int i = 0; i < n; i++)
+			subset[i] = false;
+		int time = 1000000;
+		double max_w = 0; // the max sum of edge valules
+		double sum_w = 0; // the current sum of edge values
 		
-//		ArrayList<Pair> nextCorners = new ArrayList<Pair>();
-//		for(Pair p : corners) {
-//			if(p.x < width/2 && p.y < height/2) {
-//				double minSize = Double.MAX_VALUE;
-//				for(Pair tree : trees) {
-//					if(biggestSquare.size < Math.min(tree.x, tree.y)) {
-//						biggestSquare.upperLeftCorner =;
-//					}
-//				}
-//				
-//			}
-//		}
-		return null;
+		while(time-- != 0)
+		{
+			int x = (int)(Math.random()*n); // Does the random function in java cause many duplicates?
+			subset[x] = !subset[x]; // change the label of x
+			
+			for(int i = 0; i < n; i++)
+			{
+				if(subset[i] != subset[x]) // i and x are in different classifications now
+				{
+					sum_w += w[i][x];
+					sum_w += w[x][i];
+				}
+				
+				if(i != x &&  subset[i] == subset[x])
+				{
+					sum_w -= w[i][x];
+					sum_w -= w[x][i];
+				}
+			}
+			
+			if(max_w < sum_w)
+			{
+				max_w = sum_w;
+			    for(int i = 0; i < n; i++)
+			    {
+			    	best_subset[i] = subset[i];
+			    }	
+			}
+		}
+		
+		for(int i = 0; i < n; i++)
+		{
+			if(best_subset[i] == false)
+				seedList.get(i).tetraploid = false;
+			else
+				seedList.get(i).tetraploid = true;
+				
+		}
 	}
+	
+//	public static ArrayList<Square> getSquaresForField(ArrayList<Pair> trees, double width, double length) {
+//		ArrayList<Pair> corners = new ArrayList<Pair>();
+//		corners.add(new Pair(0,0));
+//		corners.add(new Pair(0,width));
+//		corners.add(new Pair(length,0));
+//		corners.add(new Pair(length,width));
+//		
+//		Square biggestSquare = new Square(new Pair(0,0), 0);
+//		
+////		ArrayList<Pair> nextCorners = new ArrayList<Pair>();
+////		for(Pair p : corners) {
+////			if(p.x < width/2 && p.y < height/2) {
+////				double minSize = Double.MAX_VALUE;
+////				for(Pair tree : trees) {
+////					if(biggestSquare.size < Math.min(tree.x, tree.y)) {
+////						biggestSquare.upperLeftCorner =;
+////					}
+////				}
+////				
+////			}
+////		}
+//		return null;
+//	}
 //	
 //	public static getBiggestSquareSize(Pair corner, ArrayList<Pair> corners, ArrayList<Pair> trees) {
 //		
+//	}
+	
+//	public ArrayList<seed> packHexagonal(ArrayList<Pair> treelist, double width, double length) {
+//		for (double x = distowall; x < width - distowall; x+= distoseed) {
+//			for (double j = y*squareSize + distowall; j < (y+1)*squareSize - distowall; j = j + distoseed) {
+//				seed tmpSeed = new seed(i, j, false);
+//				boolean add = true;
+//				for (Pair tree : treelist) {
+//					if (distance(tmpSeed, tree) < distotree) {
+//						add = false;
+//						break;
+//					}
+//				}
+//				if (add) {
+//					seedList.add(tmpSeed);
+//				}
+//			}
+//		}
+//		
+//		return null;
 //	}
 
 	public static class CirclesRadius {
