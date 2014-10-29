@@ -247,43 +247,6 @@ public class Player extends watermelon.sim.Player {
 			
 			seedList.addAll(tempList);
 			
-//			Pair upperLeftCorner = new Pair(0,0);
-//			double rectWidth;
-//			double rectLength;
-//			if(bestSquare.size != length) {
-//					//horizontal rectangle
-//				if(bestSquare.upperLeftCorner.y != 0) {
-//					upperLeftCorner.x = 0;
-//					upperLeftCorner.y = 0;
-//					rectWidth = width;
-//					rectLength = bestSquare.upperLeftCorner.y;
-//				} else {
-//					upperLeftCorner.x = 0;
-//					upperLeftCorner.y = bestSquare.upperLeftCorner.y + bestSquare.size;
-//					rectWidth = width;
-//					rectLength = length - bestSquare.upperLeftCorner.y;
-//				}
-//				Rectangle horizontalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
-//				tempList = new HexagonalPacking(horizontalRect).pack(treelist, width, length);
-//				seedList.addAll(tempList);
-//			}
-//			
-//			if(bestSquare.upperLeftCorner.x != 0) {
-//				upperLeftCorner.x = 0;
-//				upperLeftCorner.y = horizontalRect.length;
-//				rectWidth = width - bestSquare.size;
-//				rectLength = length - horizontalRect.length;
-//			} else {
-//				upperLeftCorner.x = bestSquare.size;
-//				upperLeftCorner.y = horizontalRect.length;
-//				rectWidth = width - bestSquare.size;
-//				rectLength = length - horizontalRect.length;
-//			}
-//			Rectangle verticalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
-//			tempList = new HexagonalPacking(verticalRect).pack(treelist, width, length);
-//			seedList.addAll(tempList);
-			
-			
 			return seedList;
 		}
 		
