@@ -10,13 +10,18 @@ public class Player extends watermelon.sim.Player {
 	static final double distowall = 1.0;
 	static final double distotree = 2.0;
 	static final double distoseed = 2.0;
+	static final double tolerance = 0.0001;
+	
+	public static Rectangle fullFieldRectangle;
 	
 	public void init() {}
 	
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
+		fullFieldRectangle = new Rectangle(new Pair(0,0), width, length);
+		
 		//pack problem
 		ArrayList<Packing> packings = new ArrayList<Packing>();
-		packings.add(new HexagonalPacking(new Rectangle(new Pair(0,0), width, length)));
+		packings.add(new HexagonalPacking(fullFieldRectangle));
 		packings.add(new BestSquarePacking());
 
 		ArrayList<seed> bestPacking = new ArrayList<seed>();
@@ -29,6 +34,7 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		ArrayList<seed> seedList = bestPacking;
+		seedList = new BestSquarePacking().pack(treelist, width, length);
 
 		
 		//label problem
@@ -221,41 +227,61 @@ public class Player extends watermelon.sim.Player {
 			ArrayList<seed> tempList; 
 			
 			Square bestSquare = getBiggestPossibleSquare(treelist, width, length);
+			System.out.printf("Best Square: %s\n", bestSquare);
 			tempList = new SquarePacking(bestSquare).pack(treelist, width, length);
 			seedList.addAll(tempList);
 			
-			Pair upperLeftCorner = new Pair(0,0);
-			double rectWidth;
-			double rectLength;
-			if(bestSquare.upperLeftCorner.y != 0) {
-				upperLeftCorner.x = 0;
-				upperLeftCorner.y = 0;
-				rectWidth = width;
-				rectLength = bestSquare.upperLeftCorner.y;
-			} else {
-				upperLeftCorner.x = 0;
-				upperLeftCorner.y = bestSquare.upperLeftCorner.y + bestSquare.size;
-				rectWidth = width;
-				rectLength = length - bestSquare.upperLeftCorner.y;
+			Rectangle full = new Rectangle(new Pair(0,0), width, length);
+			tempList = new HexagonalPacking(full).pack(treelist, width, length);
+			
+			Iterator<seed> seedIt = tempList.iterator();
+			while(seedIt.hasNext()) {
+				seed s = seedIt.next();
+				for(seed squareSeed : seedList) {
+					if(distance(s, squareSeed) < 1.9999) {
+						seedIt.remove();
+						break;
+					}
+				}
 			}
-			Rectangle horizontalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
-			tempList = new HexagonalPacking(horizontalRect).pack(treelist, width, length);
+			
 			seedList.addAll(tempList);
 			
-			if(bestSquare.upperLeftCorner.x != 0) {
-				upperLeftCorner.x = 0;
-				upperLeftCorner.y = horizontalRect.length;
-				rectWidth = width - bestSquare.size;
-				rectLength = length - horizontalRect.length;
-			} else {
-				upperLeftCorner.x = bestSquare.size;
-				upperLeftCorner.y = horizontalRect.length;
-				rectWidth = width - bestSquare.size;
-				rectLength = length - horizontalRect.length;
-			}
-			Rectangle verticalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
-			tempList = new HexagonalPacking(verticalRect).pack(treelist, width, length);
-			seedList.addAll(tempList);
+//			Pair upperLeftCorner = new Pair(0,0);
+//			double rectWidth;
+//			double rectLength;
+//			if(bestSquare.size != length) {
+//					//horizontal rectangle
+//				if(bestSquare.upperLeftCorner.y != 0) {
+//					upperLeftCorner.x = 0;
+//					upperLeftCorner.y = 0;
+//					rectWidth = width;
+//					rectLength = bestSquare.upperLeftCorner.y;
+//				} else {
+//					upperLeftCorner.x = 0;
+//					upperLeftCorner.y = bestSquare.upperLeftCorner.y + bestSquare.size;
+//					rectWidth = width;
+//					rectLength = length - bestSquare.upperLeftCorner.y;
+//				}
+//				Rectangle horizontalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
+//				tempList = new HexagonalPacking(horizontalRect).pack(treelist, width, length);
+//				seedList.addAll(tempList);
+//			}
+//			
+//			if(bestSquare.upperLeftCorner.x != 0) {
+//				upperLeftCorner.x = 0;
+//				upperLeftCorner.y = horizontalRect.length;
+//				rectWidth = width - bestSquare.size;
+//				rectLength = length - horizontalRect.length;
+//			} else {
+//				upperLeftCorner.x = bestSquare.size;
+//				upperLeftCorner.y = horizontalRect.length;
+//				rectWidth = width - bestSquare.size;
+//				rectLength = length - horizontalRect.length;
+//			}
+//			Rectangle verticalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
+//			tempList = new HexagonalPacking(verticalRect).pack(treelist, width, length);
+//			seedList.addAll(tempList);
 			
 			
 			return seedList;
@@ -330,7 +356,6 @@ public class Player extends watermelon.sim.Player {
 				bestSquare.size = currentSquare.size;
 			}
 
-			System.out.printf("Best Square: %s\n", bestSquare);
 			return bestSquare;
 		}
 
