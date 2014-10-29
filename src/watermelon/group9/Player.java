@@ -34,7 +34,7 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		ArrayList<seed> seedList = bestPacking;
-		seedList = new BestSquarePacking().pack(treelist, width, length);
+//		seedList = new BestSquarePacking().pack(treelist, width, length);
 
 		
 		//label problem
