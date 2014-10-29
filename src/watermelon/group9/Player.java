@@ -347,6 +347,7 @@ public class Player extends watermelon.sim.Player {
 			File file = new File(filename);
 			BufferedReader reader = null;
 			double lastRadius = 0;
+			int lastNumberOfCircles = 0;
 			try {
 			    reader = new BufferedReader(new FileReader(file));
 			    String text = null;
@@ -357,15 +358,15 @@ public class Player extends watermelon.sim.Player {
 			    
 			    	String[] parts = text.split(" ");
 			    	double radiusTemp = Double.parseDouble(parts[1]);
-			    	
+		    		int numberOfCircles = Integer.parseInt(parts[0]);
+
 			    	if (radiusTemp < radius) {
-			    		int numberOfCircles = Integer.parseInt(parts[0]);
-				    	return new CirclesRadius(lastRadius, numberOfCircles-1);
+				    	return new CirclesRadius(lastRadius, lastNumberOfCircles);
 			    	} else if (radiusTemp == radius) {
-			    		int numberOfCircles = Integer.parseInt(parts[0]);
 				    	return new CirclesRadius(radiusTemp, numberOfCircles);
 			    	}
 			    	lastRadius = radiusTemp;
+			    	lastNumberOfCircles = numberOfCircles;
 			    }
 			} catch (FileNotFoundException e) {
 			    e.printStackTrace();
