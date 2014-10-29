@@ -16,7 +16,8 @@ public class Player extends watermelon.sim.Player {
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
 		//pack problem
 		ArrayList<Packing> packings = new ArrayList<Packing>();
-		packings.add(new HexagonalPacking());
+		packings.add(new HexagonalPacking(new Rectangle(new Pair(0,0), width, length)));
+		packings.add(new BestSquarePacking());
 
 		ArrayList<seed> bestPacking = new ArrayList<seed>();
 		for(Packing p : packings) {
@@ -28,7 +29,8 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		ArrayList<seed> seedList = bestPacking;
-//		seedList = new SquarePacking(getBiggestPossibleSquare(treelist, width, length)).pack(treelist, width, length);
+
+		
 		//label problem
 //		labelSeedsBestRandom(seedList, treelist, width, length, s);
 		
@@ -46,212 +48,10 @@ public class Player extends watermelon.sim.Player {
 		return Math.sqrt((tmp.x - pair.x) * (tmp.x - pair.x) + (tmp.y - pair.y) * (tmp.y - pair.y));
 	}
 	
-	static double gcd(double a, double b) {
-		int precision = 10000;
-		return gcd((int) (a*precision), (int) (b*precision))/(1.0*precision);
-	}
-	
-	static int gcd(int a, int b) {
-		while(b != 0) {
-			int temp = b;
-			b = a % b;
-			a = temp;
-		}
-		return a;
-	}
-	
-	static CirclesRadius getMatchedCirclesRadiusForSquare(double radius) {
-		String filename = "radius.txt";
-		File file = new File(filename);
-		BufferedReader reader = null;
-		double lastRadius = 0;
-		try {
-		    reader = new BufferedReader(new FileReader(file));
-		    String text = null;
-
-		    while ((text = reader.readLine()) != null) {
-//		    	System.out.printf("%s\n", text);
-//		    	System.out.printf("%d\n", Integer.parseInt(text));
-		    
-		    	String[] parts = text.split(" ");
-		    	double radiusTemp = Double.parseDouble(parts[1]);
-		    	
-		    	if (radiusTemp < radius) {
-		    		int numberOfCircles = Integer.parseInt(parts[0]);
-			    	return new CirclesRadius(lastRadius, numberOfCircles-1);
-		    	} else if (radiusTemp == radius) {
-		    		int numberOfCircles = Integer.parseInt(parts[0]);
-			    	return new CirclesRadius(radiusTemp, numberOfCircles);
-		    	}
-		    	lastRadius = radiusTemp;
-		    }
-		} catch (FileNotFoundException e) {
-		    e.printStackTrace();
-		} catch (IOException e) {
-		    e.printStackTrace();
-		} finally {
-		    try {
-		        if (reader != null) {
-		            reader.close();
-		        }
-		    } catch (IOException e) {
-		    }
-		}
-		return null;
-	}
-	
-	static ArrayList<Pair> getCirclesLocationsForSquare(double squareSize) {
-		double circleRadius = 1/squareSize;
-		CirclesRadius matchedCirclesRadius = getMatchedCirclesRadiusForSquare(circleRadius);
-		int numberOfCircles = matchedCirclesRadius.circles;
-		
-		System.out.printf("ideal radius is %f\n", 1/squareSize);
-		System.out.printf("actual radius is %f\n", matchedCirclesRadius.radius);
-		System.out.printf("numberOfCircles is %d\n", matchedCirclesRadius.circles);
-		
-		String filename = "csq_coords/csq" + numberOfCircles + ".txt";
-		File file = new File(filename);
-		BufferedReader reader = null;
-		
-		ArrayList<Pair> locations = new ArrayList<Pair>(numberOfCircles);
-		
-		try {
-		    reader = new BufferedReader(new FileReader(file));
-		    String text = null;
-
-		    while ((text = reader.readLine()) != null) {
-//		    	System.out.printf("%s\n", text);
-		    	String[] parts = text.trim().split("\\s+");
-//		    	System.out.printf("%s\n", parts[0]);
-//		    	System.out.printf("%s %s\n", parts[1], parts[2]);
-//		    	System.out.printf("%s\n\n\n", parts[2]);
-		    	double x = (Double.parseDouble(parts[1]) + 0.5)/matchedCirclesRadius.radius;
-		    	double y = (Double.parseDouble(parts[2]) + 0.5)/matchedCirclesRadius.radius;
-		    	locations.add(new Pair(x, y));
-//		    	System.out.printf("%f %f\n", x, y);
-//		    	System.out.printf("\n");
-		    }
-		} catch (FileNotFoundException e) {
-		    e.printStackTrace();
-		} catch (IOException e) {
-		    e.printStackTrace();
-		} finally {
-		    try {
-		        if (reader != null) {
-		            reader.close();
-		        }
-		    } catch (IOException e) {
-		    }
-		}
-		return locations;
-	}
-	
-	static boolean squareHasTree(double x, double y, ArrayList<Pair> treelist, double squareSize) {
-		for(Pair tree : treelist) {
-			if(pointIsInsideSquare(tree.x, tree.y, x, y, squareSize) ||
-					pointIsInsideSquare(tree.x-1, tree.y, x, y, squareSize) ||
-					pointIsInsideSquare(tree.x+1, tree.y, x, y, squareSize) ||
-					pointIsInsideSquare(tree.x, tree.y-1, x, y, squareSize) ||
-					pointIsInsideSquare(tree.x, tree.y+1, x, y, squareSize)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public static Square getBiggestPossibleSquare(ArrayList<Pair> treelist, double width, double length) {
-		if(treelist.size() == 0) {
-			return new Square(new Pair(0,0), Math.min(width, length));
-		}
-		
-		Square bestSquare = new Square(new Pair(0,0), 0);
-		for(Pair tree : treelist) {
-			double swCorner = Math.min(Math.abs(length - tree.y), Math.abs(tree.x));
-			if(swCorner > bestSquare.size) {
-				bestSquare.upperLeftCorner.x = 0;
-				bestSquare.upperLeftCorner.y = length - swCorner;
-				bestSquare.size = swCorner;
-			}
-			double seCorner = Math.min(Math.abs(length - tree.y), Math.abs(width - tree.x));
-			if(seCorner > bestSquare.size) {
-				bestSquare.upperLeftCorner.x = width - seCorner;
-				bestSquare.upperLeftCorner.y = length - seCorner;
-				bestSquare.size = seCorner;
-			}
-			double nwCorner = Math.min(Math.abs(length - tree.y), Math.abs(tree.x));
-			if(nwCorner > bestSquare.size) {
-				bestSquare.upperLeftCorner.x = 0;
-				bestSquare.upperLeftCorner.y = 0;
-				bestSquare.size = nwCorner;
-			}
-			double neCorner = Math.min(Math.abs(length - tree.y), Math.abs(tree.x));
-			if(neCorner > bestSquare.size) {
-				bestSquare.upperLeftCorner.x = width - neCorner;
-				bestSquare.upperLeftCorner.y = 0;
-				bestSquare.size = neCorner;
-			}
-		}
-		
-		System.out.printf("Best Square: %s", bestSquare);
-		return bestSquare;
-	}
-	
-	public static boolean pointIsInsideSquare(double xPoint, double yPoint, double xSquare, double ySquare, double squareSize) {
-		return (xPoint > xSquare && xPoint < xSquare + squareSize) && (yPoint > ySquare && yPoint < ySquare + squareSize);
-	}
-	
 	public static double getDensity(ArrayList<seed> seedList, double width, double length) {
 		return (seedList.size()*Math.PI)/(length*width);
 	}
 
-	public ArrayList<seed> packSeedsGcdSquares(ArrayList<Pair> treelist, double width, double length) {
-		double squareSize = gcd(width,length);
-		if(squareSize == 1) {
-			width--;
-			length--;
-			squareSize = gcd(width, length);
-		}
-		
-		System.out.printf("Gcd of %f and %f is appx %f\n", width, length, squareSize);
-		System.out.printf("%fx%f field\n", width/squareSize, length/squareSize);
-		System.out.printf("square size is %f\n", squareSize);
-		
-		ArrayList<Pair> circlesLocation = getCirclesLocationsForSquare(squareSize);
-		
-		ArrayList<seed> seedList = new ArrayList<seed>();
-//		loop:
-		for(int x = 0; x < width/squareSize; x++) {
-			for (int y = 0; y < length/squareSize; y++) {
-				if (squareHasTree(x*squareSize, y*squareSize, treelist, squareSize)) {
-					for (double i = x*squareSize + distowall; i < (x+1)*squareSize - distowall; i = i + distoseed) {
-						for (double j = y*squareSize + distowall; j < (y+1)*squareSize - distowall; j = j + distoseed) {
-							seed tmpSeed = new seed(i, j, false);
-							boolean add = true;
-							for (Pair tree : treelist) {
-								if (distance(tmpSeed, tree) < distotree) {
-									add = false;
-									break;
-								}
-							}
-							if (add) {
-								seedList.add(tmpSeed);
-							}
-						}
-					}
-					continue;
-				}
-				for(Pair location : circlesLocation) {
-					double seedX = squareSize*x + location.x;
-					double seedY = squareSize*y + location.y;
-					seedList.add(new seed(seedX, seedY, false));
-//					System.out.printf("%f %f\n", seedX, seedY);
-				}
-//				break loop; 
-			}
-		}
-		return seedList;
-	}
-	
 	public void labelSeedsBestRandom(ArrayList<seed> seedList, ArrayList<Pair> treelist, double width, double length, double s) {
 		int n = seedList.size();
 		double w[][] = new double[n][n];
@@ -329,35 +129,11 @@ public class Player extends watermelon.sim.Player {
 		}
 	}
 	
-//	public static ArrayList<Square> getSquaresForField(ArrayList<Pair> trees, double width, double length) {
-//		ArrayList<Pair> corners = new ArrayList<Pair>();
-//		corners.add(new Pair(0,0));
-//		corners.add(new Pair(0,width));
-//		corners.add(new Pair(length,0));
-//		corners.add(new Pair(length,width));
-//		
-//		Square biggestSquare = new Square(new Pair(0,0), 0);
-//		
-////		ArrayList<Pair> nextCorners = new ArrayList<Pair>();
-////		for(Pair p : corners) {
-////			if(p.x < width/2 && p.y < height/2) {
-////				double minSize = Double.MAX_VALUE;
-////				for(Pair tree : trees) {
-////					if(biggestSquare.size < Math.min(tree.x, tree.y)) {
-////						biggestSquare.upperLeftCorner =;
-////					}
-////				}
-////				
-////			}
-////		}
-//		return null;
-//	}
-//	
-//	public static getBiggestSquareSize(Pair corner, ArrayList<Pair> corners, ArrayList<Pair> trees) {
-//		
-//	}
-	
 	public static class HexagonalPacking implements Packing {
+		public Rectangle rectangle;
+		
+		public HexagonalPacking(Rectangle rectangle) { this.rectangle = rectangle; }
+		
 		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length) {
 			ArrayList<seed> verticalPacking = packHexagonalDirectional(treelist, width, length, true);
 			ArrayList<seed> horizontalPacking = packHexagonalDirectional(treelist, width, length, false);
@@ -372,13 +148,13 @@ public class Player extends watermelon.sim.Player {
 		public ArrayList<seed> packHexagonalDirectional(ArrayList<Pair> treelist, double width, double length, boolean doVertical) {
 			ArrayList<seed> seedList = new ArrayList<seed>();
 			
-			double x = distowall;
-			double y = length - distowall;
+			double x = distowall + rectangle.upperLeftCorner.x;
+			double y = rectangle.length - distowall + rectangle.upperLeftCorner.y;
 			
 			boolean nextIsRowFromEdge = false;
 			if(doVertical) {
-				while(x >= distowall && x <= width - distowall) {
-					while(y >= distowall && y <= length - distowall) {
+				while(x >= distowall + rectangle.upperLeftCorner.x && x <= rectangle.width + rectangle.upperLeftCorner.x - distowall) {
+					while(y >= distowall + rectangle.upperLeftCorner.y && y <= rectangle.length + rectangle.upperLeftCorner.y - distowall) {
 						seed tmpSeed = new seed(x, y, false);
 						
 						
@@ -397,16 +173,16 @@ public class Player extends watermelon.sim.Player {
 						y -= distoseed;
 					}
 					if (nextIsRowFromEdge) {
-						y = length - distowall;
+						y = rectangle.length + rectangle.upperLeftCorner.y - distowall;
 					} else {
-						y = length - distoseed;
+						y = rectangle.length + rectangle.upperLeftCorner.y - distoseed;
 					}
 					x += Math.sqrt(3);
 					nextIsRowFromEdge = !nextIsRowFromEdge;
 				}
 			} else {
-				while(y >= distowall && y <= length - distowall) {
-					while(x >= distowall && x <= width - distowall) {
+				while(y >= distowall + rectangle.upperLeftCorner.y && y <= rectangle.length + rectangle.upperLeftCorner.y - distowall) {
+					while(x >= distowall + rectangle.upperLeftCorner.x && x <= rectangle.width + rectangle.upperLeftCorner.x - distowall) {
 						seed tmpSeed = new seed(x, y, false);
 						
 
@@ -425,9 +201,9 @@ public class Player extends watermelon.sim.Player {
 						x += distoseed;
 					}
 					if (nextIsRowFromEdge) {
-						x = distowall;
+						x = distowall + rectangle.upperLeftCorner.x;
 					} else {
-						x = distoseed;
+						x = distoseed + rectangle.upperLeftCorner.x;
 					}
 					y -= Math.sqrt(3);
 					nextIsRowFromEdge = !nextIsRowFromEdge;
@@ -441,8 +217,123 @@ public class Player extends watermelon.sim.Player {
 	
 	public static class BestSquarePacking implements Packing {
 		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length) {
-			return null;
+			ArrayList<seed> seedList = new ArrayList<seed>();
+			ArrayList<seed> tempList; 
+			
+			Square bestSquare = getBiggestPossibleSquare(treelist, width, length);
+			tempList = new SquarePacking(bestSquare).pack(treelist, width, length);
+			seedList.addAll(tempList);
+			
+			Pair upperLeftCorner = new Pair(0,0);
+			double rectWidth;
+			double rectLength;
+			if(bestSquare.upperLeftCorner.y != 0) {
+				upperLeftCorner.x = 0;
+				upperLeftCorner.y = 0;
+				rectWidth = width;
+				rectLength = bestSquare.upperLeftCorner.y;
+			} else {
+				upperLeftCorner.x = 0;
+				upperLeftCorner.y = bestSquare.upperLeftCorner.y + bestSquare.size;
+				rectWidth = width;
+				rectLength = length - bestSquare.upperLeftCorner.y;
+			}
+			Rectangle horizontalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
+			tempList = new HexagonalPacking(horizontalRect).pack(treelist, width, length);
+			seedList.addAll(tempList);
+			
+			if(bestSquare.upperLeftCorner.x != 0) {
+				upperLeftCorner.x = 0;
+				upperLeftCorner.y = horizontalRect.length;
+				rectWidth = width - bestSquare.size;
+				rectLength = length - horizontalRect.length;
+			} else {
+				upperLeftCorner.x = bestSquare.size;
+				upperLeftCorner.y = horizontalRect.length;
+				rectWidth = width - bestSquare.size;
+				rectLength = length - horizontalRect.length;
+			}
+			Rectangle verticalRect = new Rectangle(upperLeftCorner, rectWidth, rectLength);
+			tempList = new HexagonalPacking(verticalRect).pack(treelist, width, length);
+			seedList.addAll(tempList);
+			
+			
+			return seedList;
 		}
+		
+		public static Square getBiggestPossibleSquare(ArrayList<Pair> treelist, double width, double length) {
+			if(treelist.size() == 0) {
+				return new Square(new Pair(0,0), Math.min(width, length));
+			}
+			
+			Square bestSquare = new Square(new Pair(0,0), 0);
+			Square currentSquare = new Square(new Pair(0,0), Double.MAX_VALUE);
+			
+			for(Pair tree : treelist) {
+				double swCorner = Math.max(Math.abs(tree.x), Math.abs(length - tree.y)) - 1;
+				if(swCorner < currentSquare.size) {
+					currentSquare.upperLeftCorner.x = 0;
+					currentSquare.upperLeftCorner.y = length - swCorner;
+					currentSquare.size = swCorner;
+				}
+			}
+			if(bestSquare.size < currentSquare.size) {
+				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+				bestSquare.size = currentSquare.size;
+			}
+			currentSquare.size = Double.MAX_VALUE;
+			
+			for(Pair tree : treelist) {
+				double seCorner = Math.max(Math.abs(width - tree.x), Math.abs(length - tree.y)) - 1;
+				if(seCorner < currentSquare.size) {
+					currentSquare.upperLeftCorner.x = width - seCorner;
+					currentSquare.upperLeftCorner.y = length - seCorner;
+					currentSquare.size = seCorner;
+				}
+			}
+			
+			if(bestSquare.size < currentSquare.size) {
+				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+				bestSquare.size = currentSquare.size;
+			}
+			currentSquare.size = Double.MAX_VALUE;
+			
+			for(Pair tree : treelist) {
+				double nwCorner = Math.max(Math.abs(tree.x), Math.abs(tree.y)) - 1;
+				if(nwCorner < currentSquare.size) {
+					currentSquare.upperLeftCorner.x = 0;
+					currentSquare.upperLeftCorner.y = 0;
+					currentSquare.size = nwCorner;
+				}
+			}
+			
+			if(bestSquare.size < currentSquare.size) {
+				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+				bestSquare.size = currentSquare.size;
+			}
+			currentSquare.size = Double.MAX_VALUE;
+			
+			for(Pair tree : treelist) {
+				double neCorner = Math.max(Math.abs(width - tree.x), Math.abs(tree.y)) - 1;
+				if(neCorner < currentSquare.size) {
+					currentSquare.upperLeftCorner.x = width - neCorner;
+					currentSquare.upperLeftCorner.y = 0;
+					currentSquare.size = neCorner;
+				}
+			}
+			if(bestSquare.size < currentSquare.size) {
+				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+				bestSquare.size = currentSquare.size;
+			}
+
+			System.out.printf("Best Square: %s\n", bestSquare);
+			return bestSquare;
+		}
+
 	}
 	
 	public static class SquarePacking implements Packing {
@@ -459,10 +350,96 @@ public class Player extends watermelon.sim.Player {
 				double seedX = square.upperLeftCorner.x + location.x;
 				double seedY = square.upperLeftCorner.y + location.y;
 				seedList.add(new seed(seedX, seedY, false));
-//						System.out.printf("%f %f\n", seedX, seedY);
 			}
 			return seedList;
 		}
+		
+		public static CirclesRadius getMatchedCirclesRadiusForSquare(double radius) {
+			String filename = "radius.txt";
+			File file = new File(filename);
+			BufferedReader reader = null;
+			double lastRadius = 0;
+			try {
+			    reader = new BufferedReader(new FileReader(file));
+			    String text = null;
+
+			    while ((text = reader.readLine()) != null) {
+//			    	System.out.printf("%s\n", text);
+//			    	System.out.printf("%d\n", Integer.parseInt(text));
+			    
+			    	String[] parts = text.split(" ");
+			    	double radiusTemp = Double.parseDouble(parts[1]);
+			    	
+			    	if (radiusTemp < radius) {
+			    		int numberOfCircles = Integer.parseInt(parts[0]);
+				    	return new CirclesRadius(lastRadius, numberOfCircles-1);
+			    	} else if (radiusTemp == radius) {
+			    		int numberOfCircles = Integer.parseInt(parts[0]);
+				    	return new CirclesRadius(radiusTemp, numberOfCircles);
+			    	}
+			    	lastRadius = radiusTemp;
+			    }
+			} catch (FileNotFoundException e) {
+			    e.printStackTrace();
+			} catch (IOException e) {
+			    e.printStackTrace();
+			} finally {
+			    try {
+			        if (reader != null) {
+			            reader.close();
+			        }
+			    } catch (IOException e) {
+			    }
+			}
+			return null;
+		}
+		
+		public static ArrayList<Pair> getCirclesLocationsForSquare(double squareSize) {
+			double circleRadius = 1/squareSize;
+			CirclesRadius matchedCirclesRadius = getMatchedCirclesRadiusForSquare(circleRadius);
+			int numberOfCircles = matchedCirclesRadius.circles;
+			
+			System.out.printf("ideal radius is %f\n", 1/squareSize);
+			System.out.printf("actual radius is %f\n", matchedCirclesRadius.radius);
+			System.out.printf("numberOfCircles is %d\n", matchedCirclesRadius.circles);
+			
+			String filename = "csq_coords/csq" + numberOfCircles + ".txt";
+			File file = new File(filename);
+			BufferedReader reader = null;
+			
+			ArrayList<Pair> locations = new ArrayList<Pair>(numberOfCircles);
+			
+			try {
+			    reader = new BufferedReader(new FileReader(file));
+			    String text = null;
+
+			    while ((text = reader.readLine()) != null) {
+//			    	System.out.printf("%s\n", text);
+			    	String[] parts = text.trim().split("\\s+");
+//			    	System.out.printf("%s\n", parts[0]);
+//			    	System.out.printf("%s %s\n", parts[1], parts[2]);
+//			    	System.out.printf("%s\n\n\n", parts[2]);
+			    	double x = (Double.parseDouble(parts[1]) + 0.5)/matchedCirclesRadius.radius;
+			    	double y = (Double.parseDouble(parts[2]) + 0.5)/matchedCirclesRadius.radius;
+			    	locations.add(new Pair(x, y));
+//			    	System.out.printf("%f %f\n", x, y);
+//			    	System.out.printf("\n");
+			    }
+			} catch (FileNotFoundException e) {
+			    e.printStackTrace();
+			} catch (IOException e) {
+			    e.printStackTrace();
+			} finally {
+			    try {
+			        if (reader != null) {
+			            reader.close();
+			        }
+			    } catch (IOException e) {
+			    }
+			}
+			return locations;
+		}
+		
 	}
 	
 	public static interface Packing {
@@ -491,8 +468,46 @@ public class Player extends watermelon.sim.Player {
 			return false;
 		}
 		
+		public boolean squareHasTree(ArrayList<Pair> treelist) {
+			for(Pair tree : treelist) {
+				if(pointIsInsideSquare(tree.x, tree.y, upperLeftCorner.x, upperLeftCorner.y, size) ||
+						pointIsInsideSquare(tree.x-1, tree.y, upperLeftCorner.x, upperLeftCorner.y, size) ||
+						pointIsInsideSquare(tree.x+1, tree.y, upperLeftCorner.x, upperLeftCorner.y, size) ||
+						pointIsInsideSquare(tree.x, tree.y-1, upperLeftCorner.x, upperLeftCorner.y, size) ||
+						pointIsInsideSquare(tree.x, tree.y+1, upperLeftCorner.x, upperLeftCorner.y, size)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		
+		public static boolean pointIsInsideSquare(double xPoint, double yPoint, double xSquare, double ySquare, double squareSize) {
+			return (xPoint > xSquare && xPoint < xSquare + squareSize) && (yPoint > ySquare && yPoint < ySquare + squareSize);
+		}
+		
 		public String toString() {
 			return "(" + upperLeftCorner.x + ", " + upperLeftCorner.y + ") " + size;
+		}
+	}
+	public static class Rectangle {
+		public Pair upperLeftCorner;
+		public double width;
+		public double length;
+		
+		public Rectangle(Pair upperLeftCorner, double width, double length) { this.upperLeftCorner = upperLeftCorner; this.width = width; this.length = length;}
+		
+		public boolean hasPair(Pair p) {
+			if(p.x >= upperLeftCorner.x && p.x <= upperLeftCorner.x + width) {
+				if(p.y >= upperLeftCorner.y && p.y <= upperLeftCorner.y + length) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		public String toString() {
+			return "(" + upperLeftCorner.x + ", " + upperLeftCorner.y + ") " + width + "x" + length;
 		}
 	}
 }
