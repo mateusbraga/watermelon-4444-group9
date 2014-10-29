@@ -7,19 +7,30 @@ import watermelon.sim.Pair;
 import watermelon.sim.seed;
 
 public class Player extends watermelon.sim.Player {
-	static double distowall = 1.0;
-	static double distotree = 2.0;
-	static double distoseed = 2.0;
+	static final double distowall = 1.0;
+	static final double distotree = 2.0;
+	static final double distoseed = 2.0;
 	
 	public void init() {}
 	
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double length, double s) {
-		
 		//pack problem
-		ArrayList<seed> seedList = packHexagonal(treelist, width, length);
+		ArrayList<Packing> packings = new ArrayList<Packing>();
+		packings.add(new HexagonalPacking());
+
+		ArrayList<seed> bestPacking = new ArrayList<seed>();
+		for(Packing p : packings) {
+			ArrayList<seed> result = p.pack(treelist, width, length);
+			System.out.printf("%s got %d seeds\n", p.getClass().getName(), result.size());
+			if(result.size() > bestPacking.size()) {
+				bestPacking = result;
+			}
+		}
 		
+		ArrayList<seed> seedList = bestPacking;
+//		seedList = new SquarePacking(getBiggestPossibleSquare(treelist, width, length)).pack(treelist, width, length);
 		//label problem
-		labelSeedsBestRandom(seedList, treelist, width, length, s);
+//		labelSeedsBestRandom(seedList, treelist, width, length, s);
 		
 		System.out.printf("Total seeds: %d\n", seedList.size());
 		System.out.printf("Density: %f\n", getDensity(seedList, width, length));
@@ -146,6 +157,43 @@ public class Player extends watermelon.sim.Player {
 			}
 		}
 		return false;
+	}
+	
+	public static Square getBiggestPossibleSquare(ArrayList<Pair> treelist, double width, double length) {
+		if(treelist.size() == 0) {
+			return new Square(new Pair(0,0), Math.min(width, length));
+		}
+		
+		Square bestSquare = new Square(new Pair(0,0), 0);
+		for(Pair tree : treelist) {
+			double swCorner = Math.min(Math.abs(length - tree.y), Math.abs(tree.x));
+			if(swCorner > bestSquare.size) {
+				bestSquare.upperLeftCorner.x = 0;
+				bestSquare.upperLeftCorner.y = length - swCorner;
+				bestSquare.size = swCorner;
+			}
+			double seCorner = Math.min(Math.abs(length - tree.y), Math.abs(width - tree.x));
+			if(seCorner > bestSquare.size) {
+				bestSquare.upperLeftCorner.x = width - seCorner;
+				bestSquare.upperLeftCorner.y = length - seCorner;
+				bestSquare.size = seCorner;
+			}
+			double nwCorner = Math.min(Math.abs(length - tree.y), Math.abs(tree.x));
+			if(nwCorner > bestSquare.size) {
+				bestSquare.upperLeftCorner.x = 0;
+				bestSquare.upperLeftCorner.y = 0;
+				bestSquare.size = nwCorner;
+			}
+			double neCorner = Math.min(Math.abs(length - tree.y), Math.abs(tree.x));
+			if(neCorner > bestSquare.size) {
+				bestSquare.upperLeftCorner.x = width - neCorner;
+				bestSquare.upperLeftCorner.y = 0;
+				bestSquare.size = neCorner;
+			}
+		}
+		
+		System.out.printf("Best Square: %s", bestSquare);
+		return bestSquare;
 	}
 	
 	public static boolean pointIsInsideSquare(double xPoint, double yPoint, double xSquare, double ySquare, double squareSize) {
@@ -309,28 +357,116 @@ public class Player extends watermelon.sim.Player {
 //		
 //	}
 	
-	public ArrayList<seed> packHexagonal(ArrayList<Pair> treelist, double width, double length) {
-		ArrayList<seed> seedList = new ArrayList<seed>();
-		
-		double x = distowall;
-		double y = length-distowall;
-		boolean nextIsRowFromEdge = false;
-		while(y > distowall) {
-			while(x < width - distowall) {
-				seed tmpSeed = new seed(x, y, false);
-				seedList.add(tmpSeed);
-				x += distoseed;
+	public static class HexagonalPacking implements Packing {
+		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length) {
+			ArrayList<seed> verticalPacking = packHexagonalDirectional(treelist, width, length, true);
+			ArrayList<seed> horizontalPacking = packHexagonalDirectional(treelist, width, length, false);
+			System.out.printf("Horizontal Packing: %d\n", horizontalPacking.size());
+			System.out.printf("Vertical Packing: %d\n", horizontalPacking.size());
+			if (verticalPacking.size() <= horizontalPacking.size()) {
+				return horizontalPacking;
 			}
-			if (nextIsRowFromEdge) {
-				x = distowall;
-			} else {
-				x = distoseed;
-			}
-			y -= Math.sqrt(3);
-			nextIsRowFromEdge = !nextIsRowFromEdge;
+			return verticalPacking;
 		}
+		
+		public ArrayList<seed> packHexagonalDirectional(ArrayList<Pair> treelist, double width, double length, boolean doVertical) {
+			ArrayList<seed> seedList = new ArrayList<seed>();
+			
+			double x = distowall;
+			double y = length - distowall;
+			
+			boolean nextIsRowFromEdge = false;
+			if(doVertical) {
+				while(x >= distowall && x <= width - distowall) {
+					while(y >= distowall && y <= length - distowall) {
+						seed tmpSeed = new seed(x, y, false);
+						
+						
+						boolean add = true;
+						for (Pair tree : treelist) {
+							if (distance(tmpSeed, tree) < distotree) {
+								add = false;
+								break;
+							}
+						}
+						if (add) {
+							seedList.add(tmpSeed);
+						}
+						
+						
+						y -= distoseed;
+					}
+					if (nextIsRowFromEdge) {
+						y = length - distowall;
+					} else {
+						y = length - distoseed;
+					}
+					x += Math.sqrt(3);
+					nextIsRowFromEdge = !nextIsRowFromEdge;
+				}
+			} else {
+				while(y >= distowall && y <= length - distowall) {
+					while(x >= distowall && x <= width - distowall) {
+						seed tmpSeed = new seed(x, y, false);
+						
+
+						boolean add = true;
+						for (Pair tree : treelist) {
+							if (distance(tmpSeed, tree) < distotree) {
+								add = false;
+								break;
+							}
+						}
+						if (add) {
+							seedList.add(tmpSeed);
+						}
+						
+						
+						x += distoseed;
+					}
+					if (nextIsRowFromEdge) {
+						x = distowall;
+					} else {
+						x = distoseed;
+					}
+					y -= Math.sqrt(3);
+					nextIsRowFromEdge = !nextIsRowFromEdge;
+				}	
+			}
+			
+		
+			return seedList;
+		}
+	}
 	
-		return seedList;
+	public static class BestSquarePacking implements Packing {
+		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length) {
+			return null;
+		}
+	}
+	
+	public static class SquarePacking implements Packing {
+		public Square square;
+		public SquarePacking(Square square) {
+			this.square = square;
+		}
+		
+		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length) {
+			ArrayList<Pair> circlesLocation = getCirclesLocationsForSquare(square.size);
+			
+			ArrayList<seed> seedList = new ArrayList<seed>();
+			for(Pair location : circlesLocation) {
+				double seedX = square.upperLeftCorner.x + location.x;
+				double seedY = square.upperLeftCorner.y + location.y;
+				seedList.add(new seed(seedX, seedY, false));
+//						System.out.printf("%f %f\n", seedX, seedY);
+			}
+			return seedList;
+		}
+	}
+	
+	public static interface Packing {
+		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length);
 	}
 
 	public static class CirclesRadius {
@@ -353,6 +489,10 @@ public class Player extends watermelon.sim.Player {
 				}
 			}
 			return false;
+		}
+		
+		public String toString() {
+			return "(" + upperLeftCorner.x + ", " + upperLeftCorner.y + ") " + size;
 		}
 	}
 }
