@@ -22,7 +22,7 @@ public class Player extends watermelon.sim.Player {
 		//pack problem
 		ArrayList<Packing> packings = new ArrayList<Packing>();
 		packings.add(new HexagonalPacking(fullFieldRectangle));
-		packings.add(new BestSquarePacking());
+		packings.add(new MixSquareHexagonalPacking());
 
 		ArrayList<seed> bestPacking = new ArrayList<seed>();
 		for(Packing p : packings) {
@@ -221,14 +221,14 @@ public class Player extends watermelon.sim.Player {
 		}
 	}
 	
-	public static class BestSquarePacking implements Packing {
+	public static class MixSquareHexagonalPacking implements Packing {
 		public ArrayList<seed> pack(ArrayList<Pair> treelist, double width, double length) {
 			ArrayList<seed> seedList = new ArrayList<seed>();
 			ArrayList<seed> tempList; 
 			
 			Square bestSquare = getBiggestPossibleSquare(treelist, width, length);
 			System.out.printf("Best Square: %s\n", bestSquare);
-			tempList = new SquarePacking(bestSquare).pack(treelist, width, length);
+			tempList = new BestKnownSquarePacking(bestSquare).pack(treelist, width, length);
 			seedList.addAll(tempList);
 			
 			Rectangle full = new Rectangle(new Pair(0,0), width, length);
@@ -251,82 +251,79 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		public static Square getBiggestPossibleSquare(ArrayList<Pair> treelist, double width, double length) {
-			if(treelist.size() == 0) {
-				return new Square(new Pair(0,0), Math.min(width, length));
-			}
+			return new Square(new Pair(0,0), Math.min(width, length));
+//			
+//			Square bestSquare = new Square(new Pair(0,0), 0);
+//			Square currentSquare = new Square(new Pair(0,0), Double.MAX_VALUE);
 			
-			Square bestSquare = new Square(new Pair(0,0), 0);
-			Square currentSquare = new Square(new Pair(0,0), Double.MAX_VALUE);
-			
-			for(Pair tree : treelist) {
-				double swCorner = Math.max(Math.abs(tree.x), Math.abs(length - tree.y)) - 1;
-				if(swCorner < currentSquare.size) {
-					currentSquare.upperLeftCorner.x = 0;
-					currentSquare.upperLeftCorner.y = length - swCorner;
-					currentSquare.size = swCorner;
-				}
-			}
-			if(bestSquare.size < currentSquare.size) {
-				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
-				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
-				bestSquare.size = currentSquare.size;
-			}
-			currentSquare.size = Double.MAX_VALUE;
-			
-			for(Pair tree : treelist) {
-				double seCorner = Math.max(Math.abs(width - tree.x), Math.abs(length - tree.y)) - 1;
-				if(seCorner < currentSquare.size) {
-					currentSquare.upperLeftCorner.x = width - seCorner;
-					currentSquare.upperLeftCorner.y = length - seCorner;
-					currentSquare.size = seCorner;
-				}
-			}
-			
-			if(bestSquare.size < currentSquare.size) {
-				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
-				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
-				bestSquare.size = currentSquare.size;
-			}
-			currentSquare.size = Double.MAX_VALUE;
-			
-			for(Pair tree : treelist) {
-				double nwCorner = Math.max(Math.abs(tree.x), Math.abs(tree.y)) - 1;
-				if(nwCorner < currentSquare.size) {
-					currentSquare.upperLeftCorner.x = 0;
-					currentSquare.upperLeftCorner.y = 0;
-					currentSquare.size = nwCorner;
-				}
-			}
-			
-			if(bestSquare.size < currentSquare.size) {
-				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
-				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
-				bestSquare.size = currentSquare.size;
-			}
-			currentSquare.size = Double.MAX_VALUE;
-			
-			for(Pair tree : treelist) {
-				double neCorner = Math.max(Math.abs(width - tree.x), Math.abs(tree.y)) - 1;
-				if(neCorner < currentSquare.size) {
-					currentSquare.upperLeftCorner.x = width - neCorner;
-					currentSquare.upperLeftCorner.y = 0;
-					currentSquare.size = neCorner;
-				}
-			}
-			if(bestSquare.size < currentSquare.size) {
-				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
-				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
-				bestSquare.size = currentSquare.size;
-			}
-
-			return bestSquare;
+//			for(Pair tree : treelist) {
+//				double swCorner = Math.max(Math.abs(tree.x), Math.abs(length - tree.y)) - 1;
+//				if(swCorner < currentSquare.size) {
+//					currentSquare.upperLeftCorner.x = 0;
+//					currentSquare.upperLeftCorner.y = length - swCorner;
+//					currentSquare.size = swCorner;
+//				}
+//			}
+//			if(bestSquare.size < currentSquare.size) {
+//				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+//				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+//				bestSquare.size = currentSquare.size;
+//			}
+//			currentSquare.size = Double.MAX_VALUE;
+//			
+//			for(Pair tree : treelist) {
+//				double seCorner = Math.max(Math.abs(width - tree.x), Math.abs(length - tree.y)) - 1;
+//				if(seCorner < currentSquare.size) {
+//					currentSquare.upperLeftCorner.x = width - seCorner;
+//					currentSquare.upperLeftCorner.y = length - seCorner;
+//					currentSquare.size = seCorner;
+//				}
+//			}
+//			
+//			if(bestSquare.size < currentSquare.size) {
+//				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+//				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+//				bestSquare.size = currentSquare.size;
+//			}
+//			currentSquare.size = Double.MAX_VALUE;
+//			
+//			for(Pair tree : treelist) {
+//				double nwCorner = Math.max(Math.abs(tree.x), Math.abs(tree.y)) - 1;
+//				if(nwCorner < currentSquare.size) {
+//					currentSquare.upperLeftCorner.x = 0;
+//					currentSquare.upperLeftCorner.y = 0;
+//					currentSquare.size = nwCorner;
+//				}
+//			}
+//			
+//			if(bestSquare.size < currentSquare.size) {
+//				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+//				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+//				bestSquare.size = currentSquare.size;
+//			}
+//			currentSquare.size = Double.MAX_VALUE;
+//			
+//			for(Pair tree : treelist) {
+//				double neCorner = Math.max(Math.abs(width - tree.x), Math.abs(tree.y)) - 1;
+//				if(neCorner < currentSquare.size) {
+//					currentSquare.upperLeftCorner.x = width - neCorner;
+//					currentSquare.upperLeftCorner.y = 0;
+//					currentSquare.size = neCorner;
+//				}
+//			}
+//			if(bestSquare.size < currentSquare.size) {
+//				bestSquare.upperLeftCorner.x = currentSquare.upperLeftCorner.x;
+//				bestSquare.upperLeftCorner.y = currentSquare.upperLeftCorner.y;
+//				bestSquare.size = currentSquare.size;
+//			}
+//
+//			return bestSquare;
 		}
-
 	}
 	
-	public static class SquarePacking implements Packing {
+	public static class BestKnownSquarePacking implements Packing {
 		public Square square;
-		public SquarePacking(Square square) {
+		public BestKnownSquarePacking(Square square) {
 			this.square = square;
 		}
 		
@@ -337,7 +334,18 @@ public class Player extends watermelon.sim.Player {
 			for(Pair location : circlesLocation) {
 				double seedX = square.upperLeftCorner.x + location.x;
 				double seedY = square.upperLeftCorner.y + location.y;
-				seedList.add(new seed(seedX, seedY, false));
+				seed tmpSeed = new seed(seedX, seedY, false);
+				
+				boolean add = true;
+				for (Pair tree : treelist) {
+					if (distance(tmpSeed, tree) < distotree) {
+						add = false;
+						break;
+					}
+				}
+				if (add) {
+					seedList.add(tmpSeed);
+				}
 			}
 			return seedList;
 		}

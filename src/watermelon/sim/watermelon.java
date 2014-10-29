@@ -503,6 +503,10 @@ public class watermelon {
 		watermelon game = new watermelon();
 		//game.init();
 		game.read(map);
-		game.playgui();
+		if(gui) {
+			game.playgui();
+		} else {
+			game.playStep();
+		}
 	}
 }
