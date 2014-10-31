@@ -232,6 +232,7 @@ public class Player extends watermelon.sim.Player {
 		
 		ArrayList<ArrayList<seed>> packings = getSquarePackings(treelist, width, height);
 		for(ArrayList<seed> squarePacking : squarePackings) {
+			removeSeedsNearTrees(squarePacking, treelist);
 			for(ArrayList<seed> filler : fillers) {
 				ArrayList<seed> result = new ArrayList<seed>(squarePacking);
 				mergeSeedLists(result, filler);
