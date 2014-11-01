@@ -16,11 +16,18 @@ public class Player extends watermelon.sim.Player {
 	
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double height, double s) {
 		//pack problem
-		ArrayList<ArrayList<seed>> packings = new ArrayList<ArrayList<seed>>();
-		packings.addAll(getHexagonalPackings(treelist, width, height));
-		packings.addAll(getSquareFilledPackings(treelist, width, height));
-
-		ArrayList<seed> seedList = getBestPacking(packings, treelist);
+		ArrayList<ArrayList<seed>> fillers = new ArrayList<ArrayList<seed>>();
+		fillers.addAll(getSquarePackings(treelist, width, height));
+		fillers.addAll(getHexagonalPackings(treelist, width, height));
+		
+		// bestPackings contains the best packings using different strategies. 
+		// The motivation behind it is that a packing might be easier to label depending on the strategy used.
+		// For example, hexagonal give us a more uniform pattern than square
+		ArrayList<ArrayList<seed>> bestPackings = new ArrayList<ArrayList<seed>>();
+		bestPackings.add(getBestFilledPacking(fillers, getSquarePackings(treelist, width, height), treelist));
+		bestPackings.add(getBestFilledPacking(fillers, getHexagonalPackings(treelist, width, height), treelist));
+		
+		ArrayList<seed> seedList = getBestPacking(bestPackings, treelist);
 		
 		//label problem
 //		labelSeedsBestRandom(seedList, treelist, width, height, s);
@@ -118,6 +125,20 @@ public class Player extends watermelon.sim.Player {
 				seedList.get(i).tetraploid = true;
 				
 		}
+	}
+	
+	public static ArrayList<seed> getBestFilledPacking(ArrayList<ArrayList<seed>> fillers, ArrayList<ArrayList<seed>> packings, ArrayList<Pair> treelist) {
+		ArrayList<ArrayList<seed>> filledPackings = new ArrayList<ArrayList<seed>>();
+		for(ArrayList<seed> p : packings) {
+			removeSeedsNearTrees(p, treelist);
+			for(ArrayList<seed> filler : fillers) {
+				ArrayList<seed> result = new ArrayList<seed>(p);
+				mergeSeedLists(result, filler);
+				filledPackings.add(result);
+			}
+		}
+		
+		return getBestPacking(filledPackings, treelist);
 	}
 	
 	public static void removeSeedsNearTrees(ArrayList<seed> seedList, ArrayList<Pair> treelist) {
@@ -222,26 +243,6 @@ public class Player extends watermelon.sim.Player {
 		}
 		return seedList;
 	}
-	
-	public ArrayList<ArrayList<seed>> getSquareFilledPackings(ArrayList<Pair> treelist, double width, double height) {
-		ArrayList<ArrayList<seed>> squarePackings = getSquarePackings(treelist, width, height);
-		
-		ArrayList<ArrayList<seed>> fillers = getSquarePackings(treelist, width, height);
-		fillers.addAll(getHexagonalPackings(treelist, width, height));
-		fillers.addAll(getSquarePackings(treelist, width, height));
-		
-		ArrayList<ArrayList<seed>> packings = getSquarePackings(treelist, width, height);
-		for(ArrayList<seed> squarePacking : squarePackings) {
-			removeSeedsNearTrees(squarePacking, treelist);
-			for(ArrayList<seed> filler : fillers) {
-				ArrayList<seed> result = new ArrayList<seed>(squarePacking);
-				mergeSeedLists(result, filler);
-				packings.add(result);
-			}
-		}
-		
-		return packings;
-	} 
 	
 	public ArrayList<ArrayList<seed>> getSquarePackings(ArrayList<Pair> treelist, double width, double height) {
 		ArrayList<ArrayList<seed>> packings = new ArrayList<ArrayList<seed>>();
