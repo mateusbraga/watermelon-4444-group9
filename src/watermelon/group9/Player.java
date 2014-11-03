@@ -28,7 +28,6 @@ public class Player extends watermelon.sim.Player {
 		bestPackings.add(getBestFilledPacking(fillers, getHexagonalPackings(treelist, width, height), treelist));
 		
 		ArrayList<seed> seedList = getBestPacking(bestPackings, treelist);
-		
 		//label problem
 //		labelSeedsBestRandom(seedList, treelist, width, height, s);
 		
@@ -183,22 +182,18 @@ public class Player extends watermelon.sim.Player {
 	public ArrayList<ArrayList<seed>> getHexagonalPackings(ArrayList<Pair> treelist, double width, double height) {
 		ArrayList<ArrayList<seed>> packings = new ArrayList<ArrayList<seed>>();
 		
+		// botton-up
 		ArrayList<seed> verticalPacking = packHexagonalDirectional(treelist, width, height, true);
 		packings.add(verticalPacking);
 		
-		ArrayList<seed> verticalPackingInverted = new ArrayList<seed>();
-		for(seed s : verticalPacking) {
-			verticalPackingInverted.add(new seed(s.x, height - s.y, false));
-		}
+		ArrayList<seed> verticalPackingInverted = generateVerticalInvertedPacking(verticalPacking, width, height);
 		packings.add(verticalPackingInverted);
 		
+		// left-right
 		ArrayList<seed> horizontalPacking = packHexagonalDirectional(treelist, width, height, false);
 		packings.add(horizontalPacking);
-//		
-		ArrayList<seed> horizontalPackingInverted = new ArrayList<seed>();
-		for(seed s : horizontalPacking) {
-			horizontalPackingInverted.add(new seed(width - s.x, s.y, false));
-		}
+		
+		ArrayList<seed> horizontalPackingInverted = generateHorizontalInvertedPacking(horizontalPacking, width, height);
 		packings.add(horizontalPackingInverted);
 		
 		return packings;
@@ -251,18 +246,68 @@ public class Player extends watermelon.sim.Player {
 		double size = Math.min(width, height);;
 		
 		bestSquare = new Square(new Pair(0,0), size);
-		packings.add(packSquare(bestSquare));
+		ArrayList<seed> squarePacking = packSquare(bestSquare);
+		// top-left corner
+		packings.add(squarePacking);
+		ArrayList<seed> currentPacking = squarePacking;
+
+		//variants
+		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
-		bestSquare = new Square(new Pair(width - size,0), size);
-		packings.add(packSquare(bestSquare));
+		//top-right corner
+		currentPacking = generateMovedOriginPacking(squarePacking, width - size, 0);
+		packings.add(currentPacking);
 		
-		bestSquare = new Square(new Pair(0, height - size), size);
-		packings.add(packSquare(bestSquare));
+		//variants
+		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
-		bestSquare = new Square(new Pair(width - size, height - size), size);
-		packings.add(packSquare(bestSquare));
+		//bottom-left corner
+		currentPacking = generateMovedOriginPacking(squarePacking, 0, height - size);
+		packings.add(currentPacking);
+		
+		//variants
+		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
+		
+		//bottom-righ corner
+		currentPacking = generateMovedOriginPacking(squarePacking, width - size, height-size);
+		packings.add(currentPacking);
+		
+		//variants
+		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
 		return packings;
+	}
+	
+	public ArrayList<seed> generateVerticalInvertedPacking(ArrayList<seed> seedList, double width, double height) {
+		ArrayList<seed> verticalInvertedPacking = new ArrayList<seed>();
+		for(seed s : seedList) {
+			verticalInvertedPacking.add(new seed(s.x, height - s.y, false));
+		}
+		return verticalInvertedPacking;
+	}
+	
+	public ArrayList<seed> generateHorizontalInvertedPacking(ArrayList<seed> seedList, double width, double height) {
+		ArrayList<seed> horizontalInvertedPacking = new ArrayList<seed>();
+		for(seed s : seedList) {
+			horizontalInvertedPacking.add(new seed(width - s.x, s.y, false));
+		}
+		return horizontalInvertedPacking;
+	}
+	
+	public ArrayList<seed> generateMovedOriginPacking(ArrayList<seed> seedList, double dx, double dy) {
+		ArrayList<seed> newOriginPacking = new ArrayList<seed>();
+		for(seed s : seedList) {
+			newOriginPacking.add(new seed(s.x + dx, s.y + dy, false));
+		}
+		return newOriginPacking;
 	}
 	
 	public ArrayList<seed> packSquare(Square square) {
