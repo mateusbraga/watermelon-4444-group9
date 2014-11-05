@@ -36,6 +36,8 @@ public class Player extends watermelon.sim.Player {
 		
 //		ArrayList<seed> seedList =getBestFilledPacking(fillers, getSquarePackings(treelist, width, height), treelist);
 		ArrayList<seed> seedList = getBestPacking(bestPackings, treelist);
+//		ArrayList<seed> seedList = getBestPacking(getHexagonalPackings(treelist, width, height), treelist);
+		
 		//label problem
 //		labelSeedsBestRandom(seedList, treelist, width, height, s);
 		
@@ -154,6 +156,7 @@ public class Player extends watermelon.sim.Player {
 			seed s = it.next();
 			for (Pair tree : treelist) {
 				if (distance(s, tree) < distotree - tolerance) {
+//					System.out.printf("Removing seed %f,%f close to tree %f,%f (%f)\n", s.x, s.y, tree.x,tree.y, distance(s,tree));
 					it.remove();
 					break;
 				}
@@ -194,15 +197,15 @@ public class Player extends watermelon.sim.Player {
 		ArrayList<seed> verticalPacking = packHexagonalDirectional(treelist, width, height, true);
 		packings.add(verticalPacking);
 		
-		ArrayList<seed> verticalPackingInverted = generateVerticalInvertedPacking(verticalPacking, width, height);
-		packings.add(verticalPackingInverted);
+		packings.add(generateHorizontalInvertedPacking(verticalPacking, width, height));
+		packings.add(generateVerticalInvertedPacking(verticalPacking, width, height));
 		
 		// left-right
 		ArrayList<seed> horizontalPacking = packHexagonalDirectional(treelist, width, height, false);
 		packings.add(horizontalPacking);
 		
-		ArrayList<seed> horizontalPackingInverted = generateHorizontalInvertedPacking(horizontalPacking, width, height);
-		packings.add(horizontalPackingInverted);
+		packings.add(generateVerticalInvertedPacking(horizontalPacking, width, height));
+		packings.add(generateHorizontalInvertedPacking(horizontalPacking, width, height));
 		
 		return packings;
 	}
