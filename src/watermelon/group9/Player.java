@@ -255,41 +255,50 @@ public class Player extends watermelon.sim.Player {
 		
 		bestSquare = new Square(new Pair(0,0), size);
 		ArrayList<seed> squarePacking = packSquare(bestSquare);
-		// top-left corner
-		packings.add(squarePacking);
 		ArrayList<seed> currentPacking = squarePacking;
-
-		//variants
-//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
+		// top-left corner
+		packings.add(currentPacking);
 		//top-right corner
-		currentPacking = generateMovedOriginPacking(squarePacking, width - size, 0);
-		packings.add(currentPacking);
-		
-		//variants
-//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
-		
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, 0));
 		//bottom-left corner
-		currentPacking = generateMovedOriginPacking(squarePacking, 0, height - size);
-		packings.add(currentPacking);
-		
-		//variants
-//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
-		
+		packings.add(generateMovedOriginPacking(currentPacking, 0, height - size));
 		//bottom-righ corner
-		currentPacking = generateMovedOriginPacking(squarePacking, width - size, height-size);
-		packings.add(currentPacking);
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, height-size));
 		
-		//variants
-//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
+		//variant invert vertical
+		currentPacking = generateVerticalInvertedPacking(currentPacking, size, size);
+		// top-left corner
+		packings.add(currentPacking);
+		//top-right corner
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, 0));
+		//bottom-left corner
+		packings.add(generateMovedOriginPacking(currentPacking, 0, height - size));
+		//bottom-righ corner
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, height-size));
+		
+		//variant invert horizontal and vertical
+		currentPacking = generateHorizontalInvertedPacking(currentPacking, size, size);
+		// top-left corner
+		packings.add(currentPacking);
+		//top-right corner
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, 0));
+		//bottom-left corner
+		packings.add(generateMovedOriginPacking(currentPacking, 0, height - size));
+		//bottom-righ corner
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, height-size));
+		
+		
+		//variant invert horizontal
+		currentPacking = generateHorizontalInvertedPacking(squarePacking, size, size);
+		// top-left corner
+		packings.add(currentPacking);
+		//top-right corner
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, 0));
+		//bottom-left corner
+		packings.add(generateMovedOriginPacking(currentPacking, 0, height - size));
+		//bottom-righ corner
+		packings.add(generateMovedOriginPacking(currentPacking, width - size, height-size));
 		
 		return packings;
 	}
@@ -297,7 +306,7 @@ public class Player extends watermelon.sim.Player {
 	public ArrayList<seed> generateVerticalInvertedPacking(ArrayList<seed> seedList, double width, double height) {
 		ArrayList<seed> verticalInvertedPacking = new ArrayList<seed>();
 		for(seed s : seedList) {
-			verticalInvertedPacking.add(new seed(s.x, height - s.y, false));
+			verticalInvertedPacking.add(new seed(s.x, Math.abs(height - s.y), false));
 		}
 		return verticalInvertedPacking;
 	}
@@ -305,7 +314,7 @@ public class Player extends watermelon.sim.Player {
 	public ArrayList<seed> generateHorizontalInvertedPacking(ArrayList<seed> seedList, double width, double height) {
 		ArrayList<seed> horizontalInvertedPacking = new ArrayList<seed>();
 		for(seed s : seedList) {
-			horizontalInvertedPacking.add(new seed(width - s.x, s.y, false));
+			horizontalInvertedPacking.add(new seed(Math.abs(width - s.x), s.y, false));
 		}
 		return horizontalInvertedPacking;
 	}
