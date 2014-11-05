@@ -33,13 +33,18 @@ public class Player extends watermelon.sim.Player {
 		fillers.addAll(getHexagonalPackings(treelist, width, height));
 		bestPackings.add(getBestFilledPacking(fillers, getHexagonalPackings(treelist, width, height), treelist));
 		
-		
-//		ArrayList<seed> seedList =getBestFilledPacking(fillers, getSquarePackings(treelist, width, height), treelist);
 		ArrayList<seed> seedList = getBestPacking(bestPackings, treelist);
+//		ArrayList<seed> seedList =getBestFilledPacking(fillers, getSquarePackings(treelist, width, height), treelist);
 //		ArrayList<seed> seedList = getBestPacking(getHexagonalPackings(treelist, width, height), treelist);
 		
-		//label problem
-//		labelSeedsBestRandom(seedList, treelist, width, height, s);
+		//coloring problem
+		Coloring c = new Coloring(seedList.size());
+		if(seedList.size() <= 23) {
+			c.colorSearch(seedList);
+		} else {
+			c.colorHeuristic(seedList);
+			//c.colorRandomly2(seedList);
+		}
 		
 		System.out.printf("Total seeds: %d\n", seedList.size());
 		System.out.printf("Density: %f\n", getDensity(seedList, width, height));
@@ -290,7 +295,6 @@ public class Player extends watermelon.sim.Player {
 		packings.add(generateMovedOriginPacking(currentPacking, 0, height - size));
 		//bottom-righ corner
 		packings.add(generateMovedOriginPacking(currentPacking, width - size, height-size));
-		
 		
 		//variant invert horizontal
 		currentPacking = generateHorizontalInvertedPacking(squarePacking, size, size);
