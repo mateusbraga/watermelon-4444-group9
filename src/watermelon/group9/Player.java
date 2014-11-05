@@ -216,8 +216,8 @@ public class Player extends watermelon.sim.Player {
 		
 		boolean nextIsRowFromEdge = false;
 		if(doVertical) {
-			while(x >= distowall && x <= width - distowall) {
-				while(y >= distowall && y <= height - distowall) {
+			while(x >= distowall -tolerance && x <= width - distowall + tolerance) {
+				while(y >= distowall -tolerance && y <= height - distowall + tolerance) {
 					seedList.add(new seed(x, y, false));
 					y -= distoseed;
 				}
@@ -230,8 +230,8 @@ public class Player extends watermelon.sim.Player {
 				nextIsRowFromEdge = !nextIsRowFromEdge;
 			}
 		} else {
-			while(y >= distowall && y <= height - distowall) {
-				while(x >= distowall && x <= width - distowall) {
+			while(y >= distowall -tolerance && y <= height - distowall+tolerance) {
+				while(x >= distowall-tolerance && x <= width - distowall+tolerance) {
 					seedList.add(new seed(x, y, false));
 					x += distoseed;
 				}
