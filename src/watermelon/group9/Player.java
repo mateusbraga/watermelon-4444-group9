@@ -16,17 +16,25 @@ public class Player extends watermelon.sim.Player {
 	
 	public ArrayList<seed> move(ArrayList<Pair> treelist, double width, double height, double s) {
 		//pack problem
-		ArrayList<ArrayList<seed>> fillers = new ArrayList<ArrayList<seed>>();
-		fillers.addAll(getSquarePackings(treelist, width, height));
-		fillers.addAll(getHexagonalPackings(treelist, width, height));
+		ArrayList<ArrayList<seed>> fillers;
 		
 		// bestPackings contains the best packings using different strategies. 
 		// The motivation behind it is that a packing might be easier to label depending on the strategy used.
 		// For example, hexagonal give us a more uniform pattern than square
 		ArrayList<ArrayList<seed>> bestPackings = new ArrayList<ArrayList<seed>>();
+		
+		fillers = new ArrayList<ArrayList<seed>>();
+		fillers.addAll(getSquarePackings(treelist, width, height));
+		fillers.addAll(getHexagonalPackings(treelist, width, height));
 		bestPackings.add(getBestFilledPacking(fillers, getSquarePackings(treelist, width, height), treelist));
+		
+		fillers = new ArrayList<ArrayList<seed>>();
+		fillers.addAll(getSquarePackings(treelist, width, height));
+		fillers.addAll(getHexagonalPackings(treelist, width, height));
 		bestPackings.add(getBestFilledPacking(fillers, getHexagonalPackings(treelist, width, height), treelist));
 		
+		
+//		ArrayList<seed> seedList =getBestFilledPacking(fillers, getSquarePackings(treelist, width, height), treelist);
 		ArrayList<seed> seedList = getBestPacking(bestPackings, treelist);
 		//label problem
 //		labelSeedsBestRandom(seedList, treelist, width, height, s);
@@ -252,36 +260,36 @@ public class Player extends watermelon.sim.Player {
 		ArrayList<seed> currentPacking = squarePacking;
 
 		//variants
-		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
+//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
 		//top-right corner
 		currentPacking = generateMovedOriginPacking(squarePacking, width - size, 0);
 		packings.add(currentPacking);
 		
 		//variants
-		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
+//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
 		//bottom-left corner
 		currentPacking = generateMovedOriginPacking(squarePacking, 0, height - size);
 		packings.add(currentPacking);
 		
 		//variants
-		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
+//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
 		//bottom-righ corner
 		currentPacking = generateMovedOriginPacking(squarePacking, width - size, height-size);
 		packings.add(currentPacking);
 		
 		//variants
-		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
-		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
-		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
+//		packings.add(generateVerticalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateHorizontalInvertedPacking(currentPacking, size, size));
+//		packings.add(generateVerticalInvertedPacking(packings.get(packings.size()-1), size, size));
 		
 		return packings;
 	}
