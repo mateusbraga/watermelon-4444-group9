@@ -50,13 +50,13 @@ public class Player extends watermelon.sim.Player {
 		
 		
 		//coloring problem
-//		Coloring c = new Coloring(seedList.size());
-//		if(seedList.size() <= 23) {
-//			c.colorSearch(seedList);
-//		} else {
-//			c.colorHeuristic(seedList);
-//			//c.colorRandomly2(seedList);
-//		}
+		Coloring c = new Coloring(seedList.size());
+		if(seedList.size() <= 23) {
+			c.colorSearch(seedList);
+		} else {
+			c.colorHeuristic(seedList);
+			//c.colorRandomly2(seedList);
+		}
 		
 		System.out.printf("Total seeds: %d\n", seedList.size());
 		System.out.printf("Density: %f\n", getDensity(seedList, width, height));
