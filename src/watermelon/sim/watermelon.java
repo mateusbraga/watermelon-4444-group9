@@ -170,8 +170,8 @@ public class watermelon {
 	}
 
 	class OutpostUI extends JPanel implements ActionListener {
-		int FRAME_SIZE = 800;
-		int FIELD_SIZE = 600;
+		int FRAME_SIZE = 600;
+		int FIELD_SIZE = 400;
 		JFrame f;
 		FieldPanel field;
 		JButton next;
