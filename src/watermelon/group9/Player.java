@@ -12,7 +12,7 @@ public class Player extends watermelon.sim.Player {
 	static final double distoseed = 2.0;
 	static final double tolerance = 0.00001;
 	static final double NEIGHBOR_RANGE = 2.5;
-	private static final int GAMBLING_TIMES = 50;
+	private static final int GAMBLING_TIMES = 10;
 	static final Random randomGen = new Random();
 	
 	double fieldWidth;
@@ -157,6 +157,7 @@ public class Player extends watermelon.sim.Player {
 		ArrayList<ArrayList<seed>> filledPackings = new ArrayList<ArrayList<seed>>();
 		for(ArrayList<seed> p : packings) {
 			ArrayList<seed> result = removeSeedsNearTrees(p, treelist);
+			result = getSeedsCloserToTrees(p, treelist);
 			for(ArrayList<seed> filler : fillers) {
 				System.out.printf(".");
 				result = mergeSeedLists(result, filler);
@@ -173,7 +174,7 @@ public class Player extends watermelon.sim.Player {
 		ArrayList<seed> gamblingSeeds = new ArrayList<seed>();
 		for (Pair tree : treelist) {
 			seed treeSeed = new seed(tree.x, tree.y, false);
-			Set<seed> conflictSet = packing.getNeighbors(treeSeed, distotree);
+			Set<seed> conflictSet = packing.getNeighbors(treeSeed, distotree - tolerance);
 			for(seed badSeed: conflictSet) {
 				addGamblingSeeds(treeSeed, badSeed, gamblingSeeds);
 				packing.remove(badSeed);
@@ -187,7 +188,7 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		for(seed s : gamblingSeeds) {
-			Set<seed> conflictSet = packing.getNeighbors(s, distoseed);
+			Set<seed> conflictSet = packing.getNeighbors(s, distoseed - tolerance);
 			if(conflictSet.size() == 0) {
 				packing.add(s);
 			}
@@ -202,23 +203,59 @@ public class Player extends watermelon.sim.Player {
 		return packing.getArrayList();
 	}
 	
+	public ArrayList<seed> getSeedsCloserToTrees(ArrayList<seed> seedList, ArrayList<Pair> treelist) {
+		return seedList;
+//		PackingSeeds packing = new PackingSeeds(seedList);
+//
+//		ArrayList<seed> gamblingSeeds = new ArrayList<seed>();
+//		for (Pair tree : treelist) {
+//			seed treeSeed = new seed(tree.x, tree.y, false);
+//			Set<seed> conflictSet = packing.getNeighbors(treeSeed, 5);
+//			for(seed badSeed: conflictSet) {
+////				addGamblingSeeds(treeSeed, badSeed, gamblingSeeds);
+//				packing.remove(badSeed);
+//			}
+//		}
+//		
+//		//add trees
+//		for (Pair tree : treelist) {
+//			seed treeSeed = new seed(tree.x, tree.y, false);
+//			packing.add(treeSeed);
+//		}
+//		
+//		for(seed s : gamblingSeeds) {
+//			Set<seed> conflictSet = packing.getNeighbors(s, distoseed - tolerance);
+//			if(conflictSet.size() == 0) {
+//				packing.add(s);
+//			}
+//		}
+//		
+//		//remove trees
+//		for (Pair tree : treelist) {
+//			seed treeSeed = new seed(tree.x, tree.y, false);
+//			packing.remove(treeSeed);
+//		}
+//		
+//		return packing.getArrayList();
+	}
+	
 	public ArrayList<seed> mergeSeedLists(ArrayList<seed> seedListBase, ArrayList<seed> seedListFiller) {
 		PackingSeeds packing = new PackingSeeds(seedListBase);
 		
 		ArrayList<seed> gamblingSeeds = new ArrayList<seed>(); 
 		for(seed fillerSeed : seedListFiller) {
-			Set<seed> conflicts = packing.getNeighbors(fillerSeed, distoseed);
+			Set<seed> conflicts = packing.getNeighbors(fillerSeed, distoseed - tolerance);
 			if(conflicts.size() == 0) {
 				packing.add(fillerSeed);
 			}
 			
 			for(seed s: conflicts) {
-				addGamblingSeeds(s, fillerSeed, gamblingSeeds);
+//				addGamblingSeeds(s, fillerSeed, gamblingSeeds);
 			}
 		}
 		
 		for(seed s : gamblingSeeds) {
-			Set<seed> conflictSet = packing.getNeighbors(s, distoseed);
+			Set<seed> conflictSet = packing.getNeighbors(s, distoseed - tolerance);
 			if(conflictSet.size() == 0) {
 				packing.add(s);
 			}
@@ -629,8 +666,8 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		public Set<seed> getNeighbors(seed s, double range) {
-			SortedSet<seed> byX = seedsByX.subSet(new seed(s.x -range - tolerance, s.y, false), new seed(s.x +range + tolerance, s.y, false));
-			SortedSet<seed> byY = seedsByY.subSet(new seed(s.x, s.y - range - tolerance, false), new seed(s.x, s.y + range + tolerance, false));
+			SortedSet<seed> byX = seedsByX.subSet(new seed(s.x -range, s.y, false), new seed(s.x +range, s.y, false));
+			SortedSet<seed> byY = seedsByY.subSet(new seed(s.x, s.y - range, false), new seed(s.x, s.y + range, false));
 			
 			SortedSet<seed> neighbors = new TreeSet<seed>(byX);
 			neighbors.retainAll(byY);
@@ -640,7 +677,7 @@ public class Player extends watermelon.sim.Player {
 			Iterator<seed> it = neighbors.iterator();
 			while(it.hasNext()) {
 				seed itSeed = it.next();
-				if(distance(s, itSeed) > range - tolerance) {
+				if(distance(s, itSeed) > range) {
 					it.remove();
 				}
 			}
