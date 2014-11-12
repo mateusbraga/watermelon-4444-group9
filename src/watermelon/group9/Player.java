@@ -10,10 +10,13 @@ public class Player extends watermelon.sim.Player {
 	static final double distowall = 1.0;
 	static final double distotree = 2.0;
 	static final double distoseed = 2.0;
-	static final double tolerance = 0.00001;
-	static final double NEIGHBOR_RANGE = 2.5;
-	private static final int GAMBLING_TIMES = 20;
+	static final double tolerance = 0.000001;
+	static final int GAMBLING_TIMES = 10;
 	static final Random randomGen = new Random();
+	private static final double TREE_RANGE_PULL = 6;
+	private static final double SEED_RANGE_PULL = 6;
+	
+	boolean nextRandomIsX = true;
 	
 	double fieldWidth;
 	double fieldHeight;
@@ -161,46 +164,32 @@ public class Player extends watermelon.sim.Player {
 	}
 	
 	public ArrayList<seed> getBestFilledPacking(ArrayList<seed> fillers, ArrayList<ArrayList<seed>> packings, ArrayList<Pair> treelist) {
-		ArrayList<ArrayList<seed>> filledPackings = new ArrayList<ArrayList<seed>>();
+		ArrayList<ArrayList<seed>> allPackings = new ArrayList<ArrayList<seed>>();
 		for(ArrayList<seed> p : packings) {
-			ArrayList<seed> result = removeSeedsNearTrees(p, treelist);
-			result = getSeedsCloser(result, treelist);
-			result = mergeSeedLists(result, fillers);
-			result = getSeedsCloser(result, treelist);
-			result = mergeSeedLists(result, fillers);
-			filledPackings.add(result);
+			PackingSeeds packing = new PackingSeeds(p);
+			PackingSeeds treePacking = new PackingSeeds(treelist, true);
+			
+			removeSeedsNearTrees(packing, treePacking);
+			mergeSeedLists(packing, treePacking, fillers);
+			getSeedsCloserToTrees(packing, treePacking);
+			mergeSeedLists(packing, treePacking, fillers);
+			getSeedsCloserToSeeds(packing, treePacking);
+			mergeSeedLists(packing, treePacking, fillers);
+			
+			allPackings.add(packing.getArrayList());
 			System.out.printf(".");
 		}
 		
-		return getBestPacking(filledPackings, treelist);
+		return getBestPacking(allPackings, treelist);
 	}
 	
-	public ArrayList<seed> removeSeedsNearTrees(ArrayList<seed> seedList, ArrayList<Pair> treelist) {
-		PackingSeeds packing = new PackingSeeds(seedList);
-		PackingSeeds treePacking = new PackingSeeds(treelist, true);
-		
-		ArrayList<seed> gamblingSeeds = new ArrayList<seed>();
-		for (Pair tree : treelist) {
-			seed treeSeed = new seed(tree.x, tree.y, false);
+	public void removeSeedsNearTrees(PackingSeeds packing, PackingSeeds treePacking) {
+		for (seed treeSeed : treePacking.getArrayList()) {
 			Set<seed> conflictSet = packing.getNeighbors(treeSeed, distotree - tolerance);
 			for(seed badSeed: conflictSet) {
-				addGamblingSeeds(treeSeed, badSeed, gamblingSeeds);
 				packing.remove(badSeed);
 			}
 		}
-		
-		for(seed s : gamblingSeeds) {
-			Set<seed> treeConflictSet = treePacking.getNeighbors(s, distotree-tolerance);
-			if (treeConflictSet.size() == 0) {
-				Set<seed> conflictSet = packing.getNeighbors(s, distoseed- tolerance);
-				if(conflictSet.size() == 0) {
-					packing.add(s);
-				}
-				
-			}
-		}
-		
-		return packing.getArrayList();
 	}
 	
 	public boolean isAdjacentToWall(seed s) {
@@ -210,138 +199,153 @@ public class Player extends watermelon.sim.Player {
 		return false;
 	}
 	
-	public ArrayList<seed> getSeedsCloser(ArrayList<seed> seedList, ArrayList<Pair> treelist) {
-		PackingSeeds packing = new PackingSeeds(seedList);
-		PackingSeeds treePacking = new PackingSeeds(treelist, true);
-		
-		for(Pair tree : treelist) {
-			seed s = new seed(tree.x, tree.y, false);
-			Set<seed> neighbors = packing.getNeighbors(s, 6);
+	public void getSeedsCloserToTrees(PackingSeeds packing, PackingSeeds treePacking) {
+		for(seed treeSeed : treePacking.getArrayList()) {
+			Set<seed> neighbors = packing.getNeighbors(treeSeed, TREE_RANGE_PULL);
 //			System.out.printf("%f, %f has %d neighbors\n", treeSeed.x, treeSeed.y, neighbors.size());
 			for(seed neighbor : neighbors) {
-				double dist = distance(s, neighbor);
-				if (dist < 2.01) {
-					continue;
+				double dist = distance(treeSeed, neighbor);
+//				if (dist < 2.01) {
+//					continue;
+//				}
+//				if(isAdjacentToWall(neighbor) && !isAdjacentToWall(treeSeed)) {
+//					continue;
+//				}
+				
+				packing.remove(neighbor);
+				if(!addGamblingSeeds(packing, treePacking, treeSeed, neighbor)) {
+					packing.add(neighbor);
 				}
-				if(isAdjacentToWall(neighbor)) {
-					continue;
-				}
-				if(neighbor.x < s.x) {
-					continue;
-				}
-//					if(neighbor.y < s.y) {
-//						continue;
-//					}
-				getSeedsCloserEngine(packing, treePacking, s, neighbor);
 			}
 		}
-//		
-		for(seed s : seedList) {
-			Set<seed> neighbors = packing.getNeighbors(s, 6);
+	}
+	
+	public void getSeedsCloserToSeeds(PackingSeeds packing, PackingSeeds treePacking) {
+		for(seed fixedSeed : packing.getArrayList()) {
+			Set<seed> neighbors = packing.getNeighbors(fixedSeed, SEED_RANGE_PULL);
 //			System.out.printf("%f, %f has %d neighbors\n", treeSeed.x, treeSeed.y, neighbors.size());
 			for(seed neighbor : neighbors) {
-				double dist = distance(s, neighbor);
-				if (dist < 2.01) {
-					continue;
-				}
-				if(isAdjacentToWall(neighbor)) {
-					continue;
-				}
-				if(neighbor.x < s.x) {
-					continue;
-				}
-//					if(neighbor.y < s.y) {
-//						continue;
-//					}
-				getSeedsCloserEngine(packing, treePacking, s, neighbor);
-			}
-		}
-		
-		return packing.getArrayList();
-	}
-	
-	public void getSeedsCloserEngine(PackingSeeds packing, PackingSeeds treePacking, seed fixed, seed moveable) {
-		packing.remove(moveable);
-		
-		ArrayList<seed> gamblingSeeds = new ArrayList<seed>();
-		addGamblingSeeds(fixed, moveable, gamblingSeeds);
-//			System.out.printf("gambling %d\n", gamblingSeeds.size());
-		
-		for(seed potentialSeed : gamblingSeeds) {
-//				System.out.printf("-");
-//				System.out.printf("original:%f,%f new: %f,%f\n", neighbor.x, neighbor.y, potentialSeed.x, potentialSeed.y);
-			Set<seed> conflictSet = packing.getNeighbors(potentialSeed, distoseed - tolerance);
-			if(conflictSet.size() == 0) {
-				Set<seed> treeConflictSet = treePacking.getNeighbors(potentialSeed, distotree-tolerance);
-				if (treeConflictSet.size() == 0) {
-//					System.out.printf("Got closer to tree! From %f to %f\n", distance(fixed, moveable), distance(potentialSeed, fixed));
-					packing.add(potentialSeed);
-					return;
+				double dist = distance(fixedSeed, neighbor);
+//				if (dist < 2.01) {
+//					continue;
+//				}
+//				if(isAdjacentToWall(neighbor) && !isAdjacentToWall(fixedSeed)) {
+//					continue;
+//				}
+
+				
+				packing.remove(neighbor);
+				if(!addGamblingSeeds(packing, treePacking, fixedSeed, neighbor)) {
+					packing.add(neighbor);
 				}
 			}
 		}
-		packing.add(moveable);
 	}
 	
-	public ArrayList<seed> mergeSeedLists(ArrayList<seed> seedListBase, ArrayList<seed> seedListFiller) {
-		PackingSeeds packing = new PackingSeeds(seedListBase);
-		
-		ArrayList<seed> gamblingSeeds = new ArrayList<seed>(); 
+	
+	public void mergeSeedLists(PackingSeeds packing, PackingSeeds treePacking, ArrayList<seed> seedListFiller) {
 		for(seed fillerSeed : seedListFiller) {
-			Set<seed> conflicts = packing.getNeighbors(fillerSeed, distoseed - tolerance);
-			if(conflicts.size() == 0) {
-				packing.add(fillerSeed);
+			Set<seed> treeConflictSet = treePacking.getNeighbors(fillerSeed, distotree - tolerance);
+			if (treeConflictSet.size() != 0) {
+				addGamblingSeeds(packing, treePacking, treeConflictSet.iterator().next(), fillerSeed);
+				continue;
 			}
 			
-			for(seed s: conflicts) {
-				addGamblingSeeds(s, fillerSeed, gamblingSeeds);
+			Set<seed> conflicts = packing.getNeighbors(fillerSeed, distoseed - tolerance);
+			if(conflicts.size() != 0) {
+				addGamblingSeeds(packing, treePacking, conflicts.iterator().next(), fillerSeed);
+				continue;
 			}
+			
+			packing.add(fillerSeed);
 		}
-		
-		for(seed s : gamblingSeeds) {
-			Set<seed> conflictSet = packing.getNeighbors(s, distoseed - tolerance);
-			if(conflictSet.size() == 0) {
-				packing.add(s);
-			}
-		}
-		
-		return packing.getArrayList();
 	}
 	
-	public void addGamblingSeeds(seed fixed, seed invalid, ArrayList<seed> gamblingSeeds) {
+	public boolean addGamblingSeeds(PackingSeeds packing, PackingSeeds treePacking, seed fixed, seed invalid) {
+		seed loopFixed = fixed;
 		for(int i = 0; i < GAMBLING_TIMES; i++) {
-			seed gamble = getRandomCloserPosition(fixed, invalid);
-			if (seedInsideField(gamble)) {
-				gamblingSeeds.add(gamble);
+			seed gamble = getRandomCloserPosition(loopFixed, invalid);
+			
+			// is inside filed
+			if (!seedInsideField(gamble)) {
+				continue;
 			}
+			
+			// conflicts with tree
+			Set<seed> treeConflictSet = treePacking.getNeighbors(gamble, distotree - tolerance);
+			if (treeConflictSet.size() != 0) {
+				loopFixed = treeConflictSet.iterator().next();
+				continue;
+			}
+			
+			Set<seed> packingConflictSet = packing.getNeighbors(gamble, distoseed - tolerance);
+			if(packingConflictSet.size() != 0) {
+				loopFixed = packingConflictSet.iterator().next();
+				continue;
+			}
+
+			packing.add(gamble);
+			return true;
 		}
+		return false;
 	}
 	
 	public seed getRandomCloserPosition(seed fixed, seed moveable) {
 		double dist = distance(fixed, moveable);
 		
-		double dx = randomGen.nextDouble() * (distoseed - dist);
-//			System.out.printf("%f %f,%f %f,%f - dx %f\n", dist, fixed.x, fixed.y, moveable.x, moveable.y, dx);
-		double newX;
-		double newY;
-		if (fixed.x < moveable.x) {
-			// move invalid to the right
-			newX = moveable.x + dx;
+		double drandom;
+		if(dist < distoseed) {
+			drandom = randomGen.nextDouble() * (distoseed - dist);
 		} else {
-			newX = moveable.x - dx;
+			drandom = randomGen.nextDouble() * distoseed;
 		}
 		
-		double squaredXDiff = (newX-fixed.x)*(newX-fixed.x);
-		double squaredYDiff =  4 - squaredXDiff;
-		double dy = Math.sqrt(squaredYDiff);
-		if (fixed.y < moveable.y) {
-			// move invalid to bottom
-			newY = fixed.y + dy;
+		double newX;
+		double newY;
+		if(nextRandomIsX) {
+			if (fixed.x < moveable.x) {
+				// move invalid to the right
+				newX = moveable.x + drandom;
+			} else {
+				newX = moveable.x - drandom;
+			}
+			newX = Math.max(distowall, Math.min(fieldWidth - distowall, newX));
+			
+			double squaredXDiff = (newX-fixed.x)*(newX-fixed.x);
+			double squaredYDiff =  4 - squaredXDiff;
+			double dmatched = Math.sqrt(squaredYDiff);
+			
+			if (fixed.y < moveable.y) {
+				// move invalid to bottom
+				newY = fixed.y + dmatched;
+			} else {
+				newY = fixed.y - dmatched;
+			}
 		} else {
-			newY = fixed.y - dy;
+			if (fixed.y < moveable.y) {
+				// move invalid to bottom
+				newY = moveable.y + drandom;
+			} else {
+				newY = moveable.y - drandom;
+			}
+			newY = Math.max(distowall, Math.min(fieldHeight - distowall, newY));
+			
+			double squaredYDiff = (newY-fixed.y)*(newY-fixed.y);
+			double squaredXDiff =  4 - squaredYDiff;
+			double dmatched = Math.sqrt(squaredXDiff);
+			
+			if (fixed.x < moveable.x) {
+				// move invalid to the right
+				newX = moveable.x + dmatched;
+			} else {
+				newX = moveable.x - dmatched;
+			}
+			
 		}
 		
 		seed newSeed = new seed(newX, newY, false);
+		nextRandomIsX = !nextRandomIsX;
+		
 //		System.out.printf("newSeed %f,%f\n", newSeed.x, newSeed.y);
 		return newSeed;
 	}
@@ -362,10 +366,14 @@ public class Player extends watermelon.sim.Player {
 	public ArrayList<seed> getBestPacking(ArrayList<ArrayList<seed>> packings, ArrayList<Pair> treelist) {
 		ArrayList<seed> bestPacking = new ArrayList<seed>();
 		for(ArrayList<seed> p : packings) {
-			ArrayList<seed> result = removeSeedsNearTrees(p, treelist);
-//			System.out.printf("Packing before: %d after removing seeds near trees: %d\n", p.size(), result.size());
-			if(result.size() > bestPacking.size()) {
-				bestPacking = result;
+			PackingSeeds packing = new PackingSeeds(p);
+			PackingSeeds treePacking = new PackingSeeds(treelist, true);
+			
+			removeSeedsNearTrees(packing, treePacking);
+			
+			ArrayList<seed> tempPacking = packing.getArrayList();
+			if(tempPacking.size() > bestPacking.size()) {
+				bestPacking = tempPacking;
 			}
 		}
 		return bestPacking;
@@ -759,7 +767,9 @@ public class Player extends watermelon.sim.Player {
 		}
 		
 		public ArrayList<seed> getArrayList() {
-			return new ArrayList<seed>(seedsByY);
+			ArrayList<seed> newArray = new ArrayList<seed>(seedsByY);
+			Collections.shuffle(newArray);
+			return newArray;
 		}
 	}
 }
